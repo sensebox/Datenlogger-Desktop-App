@@ -8,9 +8,10 @@ import {
 import Root from "./routes/root";
 import ErrorPage from "./error-page";
 
-import Contact from "./routes/contact";
+import Upload from "./routes/upload";
 
 import "./styles.css";
+import Boards from "./routes/boards";
 
 const router = createBrowserRouter([
   {
@@ -19,9 +20,13 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "contacts/:contactId",
-        element: <Contact />,
+        path: "upload",
+        element: <Upload />,
       },
+      {
+        path: "boards",
+        element: <Boards />
+      }
     ],
   },
 ]);
