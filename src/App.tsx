@@ -1,8 +1,16 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
-import { Button } from "./components/ui/button";
+import AuthProvider from "./components/auth-provider";
+import { Route, Routes } from "react-router-dom";
+import Boards from "./routes/boards";
+import ProtectedRoute from "./components/protected-route";
+import Upload from "./routes/upload";
+import { MainNav } from "./components/main-nav";
+import Login from "./routes/login";
+import BoardSwitcher from "./components/board-switcher";
+import { UserNav } from "./components/user-nav";
+import ErrorPage from "./error-page";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -14,12 +22,34 @@ function App() {
   }
 
   return (
-    <>
-      <h1 className="text-3xl font-bold underline">
-        Hello world!
-      </h1>
-      <Button variant={"destructive"}>TestButton</Button>
-    </>
+    <AuthProvider>
+      <div className="hidden flex-col md:flex">
+          <div className="border-b">
+              <div className="flex h-16 items-center px-4">
+                  <BoardSwitcher />
+                  <MainNav className="mx-6" />
+                  <div className="ml-auto flex items-center space-x-4">
+                  <UserNav />
+              </div>
+          </div>
+          </div>
+      </div>
+
+      <Routes>
+        <Route index element={<Boards />} errorElement={<ErrorPage />} />
+        <Route path="boards" element={<Boards />} errorElement={<ErrorPage />} />
+        <Route path="login" element={<Login />} errorElement={<ErrorPage />} />
+        <Route
+          path="upload"
+          element={
+            <ProtectedRoute>
+              <Upload />
+            </ProtectedRoute>
+          }
+          errorElement={<ErrorPage />}
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 

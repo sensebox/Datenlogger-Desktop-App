@@ -5,13 +5,17 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
+import ProtectedRoute from "./components/protected-route";
+
 import Root from "./routes/root";
 import ErrorPage from "./error-page";
 
 import Upload from "./routes/upload";
+import Boards from "./routes/boards";
+import Login from "./routes/login";
+
 
 import "./styles.css";
-import Boards from "./routes/boards";
 
 const router = createBrowserRouter([
   {
@@ -20,19 +24,25 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "upload",
-        element: <Upload />,
+        path: "login",
+        element: <Login />
       },
       {
         path: "boards",
         element: <Boards />
-      }
+      },
+      {
+        path: "upload",
+        element: <ProtectedRoute>
+          <Upload />
+        </ProtectedRoute> ,
+      },
     ],
   },
 ]);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+      <RouterProvider router={router} />
   </React.StrictMode>
 );

@@ -1,6 +1,6 @@
 
 
-import { Link } from "react-router-dom"
+import { Link, NavLink } from "react-router-dom"
 import { cn } from "../lib/utils"
 
 export function MainNav({
@@ -12,18 +12,24 @@ export function MainNav({
       className={cn("flex items-center space-x-4 lg:space-x-6", className)}
       {...props}
     >
-      <Link
+      <NavLink
         to="/boards"
-        className="text-sm font-medium transition-colors hover:text-primary"
+        className={({ isActive, isPending }) =>
+          isPending ? "text-muted-foreground" : isActive ? "text-green-400" : ""
+        }
+        // className="text-sm font-medium transition-colors hover:text-primary"
       >
         Boards
-      </Link>
-      <Link
+      </NavLink>
+      <NavLink
         to="/upload"
-        className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        className={({ isActive, isPending }) =>
+          isPending ? "text-muted-foreground" : isActive ? "text-green-400" : ""
+        }
+        // className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
         Upload
-      </Link>
+      </NavLink>
     </nav>
   )
 }
