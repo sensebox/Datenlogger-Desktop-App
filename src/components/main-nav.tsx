@@ -17,7 +17,6 @@ export function MainNav({
         className={({ isActive, isPending }) =>
           isPending ? "text-muted-foreground" : isActive ? "text-green-400" : ""
         }
-        // className="text-sm font-medium transition-colors hover:text-primary"
       >
         Boards
       </NavLink>
@@ -26,7 +25,6 @@ export function MainNav({
         className={({ isActive, isPending }) =>
           isPending ? "text-muted-foreground" : isActive ? "text-green-400" : ""
         }
-        // className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
       >
         Upload
       </NavLink>
