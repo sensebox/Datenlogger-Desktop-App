@@ -1,13 +1,11 @@
-import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
+import { UserAuthForm } from "@/components/user-auth-form";
 
 export default function Login() {
-    const { onLogin } = useAuth();
-    return (
-        <h1>
-            <Button onClick={onLogin}>
-                Sign In
-            </Button>
-        </h1>
-    )
+  return (
+    <div className="lg:p-8">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
+        <UserAuthForm />
+      </div>
+    </div>
+  );
 }

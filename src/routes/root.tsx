@@ -3,24 +3,26 @@ import { MainNav } from "../components/main-nav";
 import { UserNav } from "../components/user-nav";
 import BoardSwitcher from "@/components/board-switcher";
 import AuthProvider from "@/components/auth-provider";
+import { Toaster } from "@/components/toaster";
 
 export default function Root() {
-    return (
-      <AuthProvider>
-        <div className="hidden flex-col md:flex">
-            <div className="border-b">
-                <div className="flex h-16 items-center px-4">
-                    <BoardSwitcher />
-                    <MainNav className="mx-6" />
-                    <div className="ml-auto flex items-center space-x-4">
-                    <UserNav />
-                </div>
+  return (
+    <AuthProvider>
+      <div className="hidden flex-col md:flex">
+        <div className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <BoardSwitcher />
+            <MainNav className="mx-6" />
+            <div className="ml-auto flex items-center space-x-4">
+              <UserNav />
             </div>
-            </div>
-            <div id="detail">
-                <Outlet />
-            </div>
+          </div>
         </div>
-      </AuthProvider>
-    );
-  }
+        <div>
+          <Outlet />
+        </div>
+      </div>
+      <Toaster />
+    </AuthProvider>
+  );
+}

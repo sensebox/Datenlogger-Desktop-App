@@ -1,9 +1,8 @@
-import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
+import * as React from "react";
+import { Check, ChevronsUpDown, ListRestartIcon } from "lucide-react";
 
-import { cn } from "../lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Button } from "./ui/button"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -12,128 +11,110 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "./ui/command"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
+} from "@/components/ui/command";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "./ui/popover"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select"
+} from "@/components/ui/popover";
+import { invoke } from "@tauri-apps/api/tauri";
+import { SenseboxConfig, SerialPort } from "@/types";
+import { useBoardStore } from "@/lib/store/board";
+// import LoadingOverlay from "./ui/LoadingOverlay";
+// import { ToastContainer } from "react-toastify";
+// import showToast from "../helper/showToast";
 
-const groups = [
-  {
-    label: "Personal Account",
-    teams: [
-      {
-        label: "Alicia Koch",
-        value: "personal",
-      },
-    ],
-  },
-  {
-    label: "Teams",
-    teams: [
-      {
-        label: "Acme Inc.",
-        value: "acme-inc",
-      },
-      {
-        label: "Monsters Inc.",
-        value: "monsters",
-      },
-    ],
-  },
-]
-
-type Team = (typeof groups)[number]["teams"][number]
-
-type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
+type PopoverTriggerProps = React.ComponentPropsWithoutRef<
+  typeof PopoverTrigger
+>;
 
 interface BoardSwitcherProps extends PopoverTriggerProps {}
 
 export default function BoardSwitcher({ className }: BoardSwitcherProps) {
-  const [open, setOpen] = React.useState(false)
-  const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false)
-  const [selectedTeam, setSelectedTeam] = React.useState<Team>(
-    groups[0].teams[0]
-  )
+  const [open, setOpen] = React.useState(false);
+  const [serialPorts, setSerialPorts] = React.useState<SerialPort[]>();
+  const [selectedBoard, setSelectedBoard] = React.useState<SerialPort>(null);
+  const { setConfig, setSerialPort } = useBoardStore();
+  const [loading, setLoading] = React.useState(false);
+  async function listSerialports() {
+    setSerialPorts(await invoke("list_serialport_devices"));
+  }
+
+  async function connectAndReadConfig(serialPort: SerialPort) {
+    try {
+      setLoading(true);
+      const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
+        port: serialPort.port,
+        command: "<3 config>",
+      });
+      console.log("BoardSwitcher: ", boardConfig);
+      setConfig(boardConfig);
+      setSerialPort(serialPort);
+      setLoading(false);
+      // showToast(`Successfully opened board at:${serialPort.port} `, "success");
+    } catch (error) {
+      setLoading(false);
+      console.log(error);
+      // showToast(`Error opening port: ${error}`, "error");
+    }
+  }
 
   return (
-    <Dialog open={showNewTeamDialog} onOpenChange={setShowNewTeamDialog}>
-      <Popover open={open} onOpenChange={setOpen}>
+    <Dialog>
+      {/* {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null} */}
+      <Popover
+        open={open}
+        onOpenChange={() => {
+          listSerialports();
+          setOpen(!open);
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             role="combobox"
             aria-expanded={open}
             aria-label="Select a team"
             className={cn("w-[200px] justify-between", className)}
           >
-            <Avatar className="mr-2 h-5 w-5">
-              <AvatarImage
-                src={`https://avatar.vercel.sh/${selectedTeam.value}.png`}
-                alt={selectedTeam.label}
-              />
-              <AvatarFallback>SC</AvatarFallback>
-            </Avatar>
-            {selectedTeam.label}
+            {selectedBoard ? selectedBoard.port : "No board selected"}
             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Search team..." />
-              <CommandEmpty>No team found.</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup key={group.label} heading={group.label}>
-                  {group.teams.map((team) => (
-                    <CommandItem
-                      key={team.value}
-                      onSelect={() => {
-                        setSelectedTeam(team)
-                        setOpen(false)
-                      }}
-                      className="text-sm"
-                    >
-                      <Avatar className="mr-2 h-5 w-5">
-                        <AvatarImage
-                          src={`https://avatar.vercel.sh/${team.value}.png`}
-                          alt={team.label}
-                        />
-                        <AvatarFallback>SC</AvatarFallback>
-                      </Avatar>
-                      {team.label}
-                      <Check
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          selectedTeam.value === team.value
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              ))}
+              <CommandInput placeholder="Search boards..." />
+              <CommandEmpty>No board found.</CommandEmpty>
+              <CommandGroup key="boards" heading="Boards">
+                {serialPorts?.map((serialPort, idx) => (
+                  <CommandItem
+                    key={idx}
+                    onSelect={() => {
+                      setSelectedBoard(serialPort);
+                      connectAndReadConfig(serialPort);
+                      setOpen(false);
+                    }}
+                    className="text-sm"
+                  >
+                    {serialPort.port} ({serialPort.product})
+                    <Check
+                      className={cn(
+                        "ml-auto h-4 w-4",
+                        selectedBoard?.port === serialPort.port
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             </CommandList>
             <CommandSeparator />
             <CommandList>
@@ -141,12 +122,11 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                 <DialogTrigger asChild>
                   <CommandItem
                     onSelect={() => {
-                      setOpen(false)
-                      setShowNewTeamDialog(true)
+                      listSerialports();
                     }}
                   >
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Create Team
+                    <ListRestartIcon className="mr-2 h-5 w-5" />
+                    Refresh List
                   </CommandItem>
                 </DialogTrigger>
               </CommandGroup>
@@ -154,50 +134,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
           </Command>
         </PopoverContent>
       </Popover>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create team</DialogTitle>
-          <DialogDescription>
-            Add a new team to manage products and customers.
-          </DialogDescription>
-        </DialogHeader>
-        <div>
-          <div className="space-y-4 py-2 pb-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Team name</Label>
-              <Input id="name" placeholder="Acme Inc." />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan">Subscription plan</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="free">
-                    <span className="font-medium">Free</span> -{" "}
-                    <span className="text-muted-foreground">
-                      Trial for two weeks
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="pro">
-                    <span className="font-medium">Pro</span> -{" "}
-                    <span className="text-muted-foreground">
-                      $9/month per user
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setShowNewTeamDialog(false)}>
-            Cancel
-          </Button>
-          <Button type="submit">Continue</Button>
-        </DialogFooter>
-      </DialogContent>
+      {/* <ToastContainer /> */}
     </Dialog>
-  )
+  );
 }

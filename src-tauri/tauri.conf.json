@@ -37,7 +37,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "connect-app-desktop",
+        "title": "senseBox Connect Desktop App",
         "width": 800,
         "height": 600
       }

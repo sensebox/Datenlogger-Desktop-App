@@ -1,9 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 import ProtectedRoute from "./components/protected-route";
 
@@ -13,7 +10,6 @@ import ErrorPage from "./error-page";
 import Upload from "./routes/upload";
 import Boards from "./routes/boards";
 import Login from "./routes/login";
-
 
 import "./styles.css";
 
@@ -25,17 +21,19 @@ const router = createBrowserRouter([
     children: [
       {
         path: "login",
-        element: <Login />
+        element: <Login />,
       },
       {
         path: "boards",
-        element: <Boards />
+        element: <Boards />,
       },
       {
         path: "upload",
-        element: <ProtectedRoute>
-          <Upload />
-        </ProtectedRoute> ,
+        element: (
+          <ProtectedRoute>
+            <Upload />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
@@ -43,6 +41,6 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-      <RouterProvider router={router} />
+    <RouterProvider router={router} />
   </React.StrictMode>
 );
