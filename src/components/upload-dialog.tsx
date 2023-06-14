@@ -20,14 +20,17 @@ import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
 import { Device } from "@/types";
 import { useAuth } from "./auth-provider";
-
-const wait = () => new Promise((resolve) => setTimeout(resolve, 1000));
+import { useToast } from "./ui/use-toast";
+import { invoke } from "@tauri-apps/api";
 
 type UploadDialogProps = {
   filename: string;
+  deviceId: string;
 };
 
-export function UploadDialog({ filename }: UploadDialogProps) {
+export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
+  const { toast } = useToast();
+
   const [open, setOpen] = useState<boolean>(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device>();
@@ -36,11 +39,9 @@ export function UploadDialog({ filename }: UploadDialogProps) {
 
   useEffect(() => {
     const fetchDevices = async () => {
-      console.log("fetchDevices: ", signInResponse);
       const response = await fetch(
         "https://api.testing.opensensemap.org/users/me/boxes",
         {
-          method: "POST",
           headers: {
             Authorization: `Bearer ${signInResponse?.token}`,
           },
@@ -48,22 +49,54 @@ export function UploadDialog({ filename }: UploadDialogProps) {
       );
       const devices = await response.json();
       setDevices(devices.data.boxes);
+      setSelectedDevice(
+        devices.data.boxes.find((device: Device) => device._id === deviceId)
+      );
     };
 
     fetchDevices();
   }, []);
 
   const uploadFile = async (event: any) => {
-    // const csv = await readCSVFile(`devices/${selectedDevice._id}/${filename}`);
-    // await fetch(
-    //   `/api/osem/${selectedDevice._id}?token=${selectedDevice.access_token}`,
-    //   {
-    //     method: "POST",
-    //     body: csv,
-    //   }
-    // );
+    const csv = await readCSVFile(
+      `.reedu/data/${selectedDevice?._id}/${filename}`
+    );
 
-    wait().then(() => setOpen(false));
+    const response = await fetch(
+      `https://api.testing.opensensemap.org/boxes/${deviceId}/data`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `${selectedDevice?.access_token}`,
+          "content-type": "text/csv",
+        },
+        body: csv,
+      }
+    );
+    const answer = await response.json();
+    console.log(answer);
+
+    if (answer.code === "BadRequest" || "UnprocessableEntity") {
+      setOpen(false);
+      toast({
+        variant: "destructive",
+        title: answer.code,
+        description: answer.message,
+        duration: 5000,
+      });
+    }
+
+    await invoke("insert_data", {
+      filename: filename,
+      device: selectedDevice?._id,
+      checksum: "",
+    });
+
+    toast({
+      description: answer,
+      duration: 5000,
+    });
+
     event.preventDefault();
   };
 

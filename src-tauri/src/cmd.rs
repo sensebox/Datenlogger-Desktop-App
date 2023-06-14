@@ -1,7 +1,8 @@
 use std::time::Duration;
 
 use crate::db;
-use crate::models::{NewPost, Post};
+use crate::models::{NewPost, Post, NewUpload, Upload};
+use crate::schema::uploads::{self, device_id};
 use crate::sensebox::SenseboxConfig;
 use crate::serialports::SerialPorts;
 use serde::{Deserialize, Serialize};
@@ -320,37 +321,42 @@ pub fn save_data_to_file(
 
 #[command]
 pub fn get_data() {
-    use crate::schema::posts::dsl::*;
+    use crate::schema::uploads::dsl::*;
 
     let mut connection = db::establish_connection();
 
-    let results = posts
+    let results = uploads
         .filter(published.eq(false))
         .limit(5)
-        .load::<Post>(&mut connection)
+        .load::<Upload>(&mut connection)
         .expect("Error loading posts.");
 
     println!("Displaying {} posts", results.len());
     for post in results {
-        println!("{}", post.title);
+        println!("{}", post.filename);
         println!("-----------\n");
-        println!("{}", post.body);
+        println!("{}", post.device_id);
     }
 }
 
 #[tauri::command]
-pub fn insert_data() {
-    use crate::schema::posts;
+pub fn insert_data(
+    filename: String,
+    device: String,
+    checksum: String
+) {
+    use crate::schema::uploads;
 
     let mut connection = db::establish_connection();
 
-    let new_post = NewPost {
-        title: "test",
-        body: "test1234",
+    let new_upload = NewUpload {
+        filename: &filename,
+        device_id: &device,
+        checksum: &checksum
     };
 
-    let result = diesel::insert_into(posts::table)
-        .values(new_post)
+    let result = diesel::insert_into(uploads::table)
+        .values(new_upload)
         .execute(&mut connection);
 
     println!("{:?}", result);

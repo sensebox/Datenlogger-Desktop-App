@@ -194,9 +194,6 @@ export default function Boards() {
             <Button onClick={() => query_db()}>
               <RefreshCcw className="mr-2 h-4 w-4" /> Query DB
             </Button>
-            <Button onClick={() => insert_db()}>
-              <RefreshCcw className="mr-2 h-4 w-4" /> Insert into DB
-            </Button>
           </div>
         </div>
         <div className="space-y-4">

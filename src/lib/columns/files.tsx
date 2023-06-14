@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { UploadDialog } from "@/components/upload-dialog";
 import { ColumnDef } from "@tanstack/react-table";
-import { FileEntry } from "@tauri-apps/api/fs";
 import { ArrowUpDown } from "lucide-react";
 
 // This type is used to define the shape of our data.
@@ -9,13 +7,7 @@ import { ArrowUpDown } from "lucide-react";
 export type File = {
   filename: string;
   size: string;
-  status: "pending" | "synced";
-};
-
-export type FileUpload = {
-  name: string;
-  size: string;
-  status: "pending" | "synced";
+  status: "pending" | "synced" | "uploaded";
 };
 
 export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
@@ -56,22 +48,3 @@ export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
     ...actions,
   ];
 };
-
-export const uploadColumns: ColumnDef<FileEntry>[] = [
-  {
-    accessorKey: "name",
-    header: "Filename",
-  },
-  {
-    accessorKey: "size",
-    header: "Size (Bytes)",
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-  },
-  {
-    id: "actions",
-    cell: ({ cell }) => <UploadDialog filename={"Tets"} />,
-  },
-];
