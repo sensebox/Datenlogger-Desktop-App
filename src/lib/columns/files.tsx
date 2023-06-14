@@ -1,5 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { UploadDialog } from "@/components/upload-dialog";
+import { FileContent } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
+import { invoke } from "@tauri-apps/api";
+import { FileEntry } from "@tauri-apps/api/fs";
 import { Delete, Save } from "lucide-react";
 
 // This type is used to define the shape of our data.
@@ -7,12 +11,37 @@ import { Delete, Save } from "lucide-react";
 export type File = {
   filename: string;
   size: string;
-  status: "pending" | "processing" | "success" | "failed";
+  status: "pending" | "synced";
 };
 
-export const columns: ColumnDef<File>[] = [
+export type FileUpload = {
+  name: string;
+  size: string;
+  status: "pending" | "synced";
+};
+
+export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
+  return [
+    {
+      accessorKey: "filename",
+      header: "Filename",
+    },
+    {
+      accessorKey: "size",
+      header: "Size (Bytes)",
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+    },
+    ...columns,
+    ...actions,
+  ];
+};
+
+export const uploadColumns: ColumnDef<FileEntry>[] = [
   {
-    accessorKey: "filename",
+    accessorKey: "name",
     header: "Filename",
   },
   {
@@ -25,17 +54,6 @@ export const columns: ColumnDef<File>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      return (
-        <div className="flex gap-4">
-          <Button onClick={() => console.log("tbd")}>
-            <Save className="mr-2 h-4 w-4" /> Copy
-          </Button>
-          <Button onClick={() => console.log("tbd")}>
-            <Delete className="mr-2 h-4 w-4" /> Delete
-          </Button>
-        </div>
-      );
-    },
+    cell: ({ cell }) => <UploadDialog filename={"Tets"} />,
   },
 ];

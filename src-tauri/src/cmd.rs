@@ -103,20 +103,20 @@ pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, 
     let mut buffer = String::new();
     port.read_to_string(&mut buffer);
 
-    let parts: Vec<&str> = buffer.trim().split('|').collect();
-    if parts.len() < 3 {
-        panic!("Invalid response format");
-    }
+    // let parts: Vec<&str> = buffer.trim().split('|').collect();
+    // if parts.len() < 3 {
+    //     panic!("Invalid response format");
+    // }
 
-    let filename = parts[0].to_string();
-    let content = parts[1].to_string();
-    let md5hash = parts[2].to_string();
+    // let filename = parts[0].to_string();
+    // let content = parts[1].to_string();
+    // let md5hash = parts[2].to_string();
 
     println!("result: {}", buffer);
 
     // Parse config.cfg string and serialize into SenseboxConfig
     let mut config: SenseboxConfig = SenseboxConfig::new();
-    for line in content.lines() {
+    for line in buffer.lines() {
         if !line.starts_with("#") && line.len() > 0 {
             let parts: Vec<&str> = line.split("=").collect();
             match parts[0] {
@@ -260,7 +260,19 @@ pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
 
     // Read data
     let mut buffer = String::new();
-    port.read_to_string(&mut buffer);
+    loop {
+        let available_bytes = match port.bytes_to_read() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
+        };
+        if available_bytes == 0 {
+            println!("No more data");
+            break;
+        }
+        port.read_to_string(&mut buffer);
+    }
+    // let mut buffer = String::new();
+    // port.read_to_string(&mut buffer);
     println!("result: {}", buffer);
 
     let parts: Vec<&str> = buffer.trim().split('|').collect();
@@ -282,15 +294,17 @@ pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
 #[command]
 pub fn save_data_to_file(
     data: String,
+    device_folder: String,
     file_path: String,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap()).join(".reedu").join("data");
+    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap()).join(".reedu").join("data").join(device_folder);
 
+    std::fs::create_dir(&app_dir);
 
     // let app_dir = app_handle.path_resolver().app_data_dir().unwrap();
     let app_str = app_dir.to_str().unwrap();
-    let realpath = format!("{}//{}", app_str, file_path);
+    let realpath = format!("{}/{}", app_str, file_path);
     println!("File is saved at: {}", realpath);
     match std::fs::write(&realpath, &data) {
         Ok(_) => {

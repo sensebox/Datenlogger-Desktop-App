@@ -2,7 +2,6 @@ import { SignInResponse } from "@/types";
 import { createContext, useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
-import { ToastAction } from "./ui/toast";
 
 interface ViewProps {
   children: React.ReactNode | React.ReactNode[];

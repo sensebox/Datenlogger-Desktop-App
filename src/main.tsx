@@ -12,6 +12,7 @@ import Boards from "./routes/boards";
 import Login from "./routes/login";
 
 import "./styles.css";
+import Folder from "./routes/folder";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +35,12 @@ const router = createBrowserRouter([
             <Upload />
           </ProtectedRoute>
         ),
+        children: [
+          {
+            path: ":folderId",
+            element: <Folder />,
+          },
+        ],
       },
     ],
   },
