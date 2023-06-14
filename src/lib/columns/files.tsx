@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { UploadDialog } from "@/components/upload-dialog";
-import { FileContent } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
-import { invoke } from "@tauri-apps/api";
 import { FileEntry } from "@tauri-apps/api/fs";
-import { Delete, Save } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -24,7 +22,17 @@ export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
   return [
     {
       accessorKey: "filename",
-      header: "Filename",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Filename
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
     },
     {
       accessorKey: "size",
@@ -32,7 +40,17 @@ export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Status
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        );
+      },
     },
     ...columns,
     ...actions,
