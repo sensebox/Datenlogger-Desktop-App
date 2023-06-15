@@ -1,6 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 
 import ProtectedRoute from "./components/protected-route";
 
@@ -21,12 +25,16 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "login",
-        element: <Login />,
+        index: true,
+        element: <Navigate to="/boards" />,
       },
       {
         path: "boards",
         element: <Boards />,
+      },
+      {
+        path: "login",
+        element: <Login />,
       },
       {
         path: "upload",
@@ -41,6 +49,10 @@ const router = createBrowserRouter([
             element: <Folder />,
           },
         ],
+      },
+      {
+        path: "*",
+        element: <Navigate to="/boards" replace />,
       },
     ],
   },

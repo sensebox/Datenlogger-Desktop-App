@@ -321,21 +321,21 @@ pub fn save_data_to_file(
 
 #[command]
 pub fn get_data() {
-    use crate::schema::uploads::dsl::*;
+    use crate::schema::posts::dsl::*;
 
     let mut connection = db::establish_connection();
 
-    let results = uploads
+    let results = posts
         .filter(published.eq(false))
         .limit(5)
-        .load::<Upload>(&mut connection)
+        .load::<Post>(&mut connection)
         .expect("Error loading posts.");
 
     println!("Displaying {} posts", results.len());
     for post in results {
-        println!("{}", post.filename);
+        println!("{}", post.title);
         println!("-----------\n");
-        println!("{}", post.device_id);
+        println!("{}", post.body);
     }
 }
 
