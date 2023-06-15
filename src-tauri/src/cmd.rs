@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::db;
-use crate::models::{NewPost, Post, NewUpload, Upload};
+use crate::models::{NewPost, Post, NewUpload, Upload, Test};
 use crate::schema::uploads::{self, device_id};
 use crate::sensebox::SenseboxConfig;
 use crate::serialports::SerialPorts;
@@ -320,22 +320,23 @@ pub fn save_data_to_file(
 }
 
 #[command]
-pub fn get_data() {
-    use crate::schema::posts::dsl::*;
+pub fn get_data(
+    device: String
+) {
+    use crate::schema::uploads::dsl::*;
 
     let mut connection = db::establish_connection();
 
-    let results = posts
-        .filter(published.eq(false))
-        .limit(5)
-        .load::<Post>(&mut connection)
+    let results = uploads
+        .filter(device_id.eq(device))
+        .load::<Upload>(&mut connection)
         .expect("Error loading posts.");
 
     println!("Displaying {} posts", results.len());
     for post in results {
-        println!("{}", post.title);
+        println!("{}", post.device_id);
         println!("-----------\n");
-        println!("{}", post.body);
+        println!("{}", post.filename);
     }
 }
 

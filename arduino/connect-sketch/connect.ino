@@ -9,8 +9,16 @@
  */
 
 #include <SD.h>
+#include <SPI.h>
 #include <senseBoxIO.h>
 #include <MD5.h>
+
+// set up variables using the SD utility library functions:
+Sd2Card card;
+SdVolume volume;
+SdFile root;
+SdFile file;
+
 /*
  * senseBox MCU Pins
  */
@@ -43,7 +51,29 @@ void setup() {
       Serial.println("initialization failed. Card inserted?");
       return;
     }
+
     Serial.println("SD ok");
+
+    if (!card.init(SPI_HALF_SPEED, chipSelect)) {
+      Serial.println("initialization failed. Things to check:");
+      Serial.println("* is a card inserted?");
+      Serial.println("* is your wiring correct?");
+      Serial.println("* did you change the chipSelect pin to match your shield or module?");
+      while (1);
+    } else {
+      Serial.println("Wiring is correct and a card is present.");
+    }
+
+    // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
+    if (!volume.init(card)) {
+      Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
+      while (1);
+    }
+
+    if (!root.openRoot(volume)) {
+      Serial.println("Could not open root of volume");
+      while (1);
+    }
 }
 
 //============
@@ -110,7 +140,7 @@ void parseData() {      // split the data into its parts
 void executeCommand() {
   switch(cmdId) {
     case 1:
-      printAllFiles();
+      printRoot();
       break;
     case 2:
       printFileContent(cmdMsg);
@@ -126,9 +156,76 @@ void executeCommand() {
   }
 }
 
+SdFile getParentDir(const char *filepath, int *index) {
+    // get parent directory
+    SdFile d1;
+    SdFile d2;
+
+    d1.openRoot(volume); // start with the mostparent, root!
+
+    // we'll use the pointers to swap between the two objects
+    SdFile *parent = &d1;
+    SdFile *subdir = &d2;
+
+    const char *origpath = filepath;
+
+    while (strchr(filepath, '/')) {
+
+      // get rid of leading /'s
+      if (filepath[0] == '/') {
+        filepath++;
+        continue;
+      }
+
+      if (! strchr(filepath, '/')) {
+        // it was in the root directory, so leave now
+        break;
+      }
+
+      // extract just the name of the next subdirectory
+      uint8_t idx = strchr(filepath, '/') - filepath;
+      if (idx > 12) {
+        idx = 12;  // don't let them specify long names
+      }
+      char subdirname[13];
+      strncpy(subdirname, filepath, idx);
+      subdirname[idx] = 0;
+
+      // close the subdir (we reuse them) if open
+      subdir->close();
+      if (! subdir->open(parent, subdirname, O_READ)) {
+        // failed to open one of the subdirectories
+        return SdFile();
+      }
+      // move forward to the next subdirectory
+      filepath += idx;
+
+      // we reuse the objects, close it.
+      parent->close();
+
+      // swap the pointers
+      SdFile *t = parent;
+      parent = subdir;
+      subdir = t;
+    }
+
+    *index = (int)(filepath - origpath);
+    // parent is now the parent directory of the file!
+    return *parent;
+  }
+
 /*
  * CMD API
  */
+
+ void printRoot() {
+
+    int pathidx = 0;
+
+    // do the interactive search
+    SdFile parentdir = getParentDir("/logs/", &pathidx);
+    parentdir.ls(LS_R);
+ }
 
  void printAllFiles() {
   // Öffnen des Root-Verzeichnisses

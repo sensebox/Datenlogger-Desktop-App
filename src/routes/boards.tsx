@@ -168,20 +168,6 @@ export default function Boards() {
     }
   };
 
-  const calculateMd5hash = (data: string) => {
-    const hash = crypto.createHash("md5");
-    hash.update(data);
-    return hash.digest("hex");
-  };
-
-  const query_db = async () => {
-    await invoke("get_data");
-  };
-
-  const insert_db = async () => {
-    await invoke("insert_data");
-  };
-
   return (
     <div className="container">
       <div className="flex-1 space-y-4 p-8 pt-6">
@@ -190,9 +176,6 @@ export default function Boards() {
           <div className="flex items-center space-x-2">
             <Button disabled={disabledButtons} onClick={() => syncFiles()}>
               <RefreshCcw className="mr-2 h-4 w-4" /> Get files
-            </Button>
-            <Button onClick={() => query_db()}>
-              <RefreshCcw className="mr-2 h-4 w-4" /> Query DB
             </Button>
           </div>
         </div>

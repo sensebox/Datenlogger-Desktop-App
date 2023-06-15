@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use crate::schema::{posts, uploads};
+use crate::schema::{posts, uploads, files, test};
 
 #[derive(Queryable)]
 pub struct Post {
@@ -16,13 +16,14 @@ pub struct NewPost<'a> {
     pub body: &'a str,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = uploads)]
 pub struct Upload {
     pub id: i32,
     pub device_id: String,
     pub filename: String,
     pub checksum: String,
-    pub uploaded_at: String,
+    pub uploaded_at: chrono::NaiveDateTime
 }
 
 #[derive(Insertable)]
@@ -31,4 +32,22 @@ pub struct NewUpload<'a> {
     pub device_id: &'a str,
     pub filename: &'a str,
     pub checksum: &'a str,
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = files)]
+pub struct File {
+    pub id: i32,
+    pub device_id: String,
+    pub filename: String,
+    pub checksum: String,
+}
+
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = test)]
+pub struct Test {
+    pub id: i32,
+    pub title: String,
+    pub body: String,
+    pub uploaded: bool,
 }
