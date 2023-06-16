@@ -43,6 +43,9 @@ export const getColumns = (columns: any, actions: any): ColumnDef<File>[] => {
           </Button>
         );
       },
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id));
+      },
     },
     ...columns,
     ...actions,
