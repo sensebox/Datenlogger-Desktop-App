@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use crate::schema::{posts, uploads, files, test};
+use serde::{Serialize, Deserialize};
 
 #[derive(Queryable)]
 pub struct Post {
@@ -16,7 +17,7 @@ pub struct NewPost<'a> {
     pub body: &'a str,
 }
 
-#[derive(Queryable, Selectable)]
+#[derive(Queryable, Selectable, Serialize, Deserialize)]
 #[diesel(table_name = uploads)]
 pub struct Upload {
     pub id: i32,

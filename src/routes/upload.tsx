@@ -31,10 +31,10 @@ export default function Upload() {
                   Device folders
                 </h4>
                 {folders.map((folder) => (
-                  <>
+                  <div id={folder.name}>
                     <Link to={`/upload/${folder.name}`}>{folder.name}</Link>
                     <Separator className="my-2" />
-                  </>
+                  </div>
                 ))}
               </div>
             </ScrollArea>

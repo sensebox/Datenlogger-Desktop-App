@@ -1,6 +1,6 @@
-import { CreditCard, LogOut, PlusCircle, Settings, User } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button, buttonVariants } from "./ui/button";
 import {
   DropdownMenu,
@@ -32,7 +32,7 @@ export function UserNav() {
 
   return (
     <>
-      {signInResponse !== null ? (
+      {signInResponse !== undefined ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">

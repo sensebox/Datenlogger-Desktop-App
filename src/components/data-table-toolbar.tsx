@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { BadgeCheck } from "lucide-react";
+import { Upload } from "lucide-react";
 
 export const statuses = [
   {
@@ -17,6 +18,11 @@ export const statuses = [
     value: "pending",
     label: "Pending",
     icon: BadgeAlert,
+  },
+  {
+    value: "uploaded",
+    label: "Uploaded",
+    icon: Upload,
   },
 ];
 

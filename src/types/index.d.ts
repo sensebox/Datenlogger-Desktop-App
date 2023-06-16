@@ -58,6 +58,14 @@ type SignInResponse = {
   token: string;
 };
 
+type Upload = {
+  id: number;
+  filename: string;
+  device_id: string;
+  checksum: string;
+  uploaded_at: Date;
+};
+
 export {
   Device,
   SerialPort,
@@ -66,4 +74,5 @@ export {
   FileContent,
   SignInData,
   SignInResponse,
+  Upload,
 };

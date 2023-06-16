@@ -2,13 +2,14 @@ import { SignInResponse } from "@/types";
 import { createContext, useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";
+import storage from "@/lib/local-storage";
 
 interface ViewProps {
   children: React.ReactNode | React.ReactNode[];
 }
 
 export type AuthContextType = {
-  signInResponse: SignInResponse | null;
+  signInResponse: SignInResponse | undefined;
   onLogin: (username: string, password: string) => void;
   onLogout: () => void;
 };
@@ -35,7 +36,7 @@ const fakeAuth = async (
 };
 
 const AuthContext = createContext<AuthContextType>({
-  signInResponse: null,
+  signInResponse: undefined,
   onLogin: () => {},
   onLogout: () => {},
 });
@@ -50,12 +51,12 @@ export default function AuthProvider({ children }: ViewProps) {
 
   const { toast } = useToast();
 
-  const [token, setToken] = useState<SignInResponse | null>(null);
+  // Load SignInResponse from localStorage and set it on context
+  const auth = storage.get<SignInResponse | undefined>("auth");
+  const [token, setToken] = useState<SignInResponse | undefined>(auth);
 
   const handleLogin = async (username: string, password: string) => {
     const response = await fakeAuth(username, password);
-
-    setToken(response);
 
     if (response.code !== "Authorized") {
       toast({
@@ -63,14 +64,20 @@ export default function AuthProvider({ children }: ViewProps) {
         title: `${response.code}`,
         description: `${response.message}`,
       });
+
+      return;
     }
+
+    setToken(response);
+    storage.set("auth", response);
 
     const origin = location.state?.from?.pathname || "/uploads";
     navigate(origin);
   };
 
   const handleLogout = () => {
-    setToken(null);
+    setToken(undefined);
+    storage.remove("auth");
   };
 
   const value = {

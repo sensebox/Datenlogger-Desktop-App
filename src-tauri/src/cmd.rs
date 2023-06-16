@@ -322,7 +322,7 @@ pub fn save_data_to_file(
 #[command]
 pub fn get_data(
     device: String
-) {
+) -> Result<Vec<Upload>, String> {
     use crate::schema::uploads::dsl::*;
 
     let mut connection = db::establish_connection();
@@ -332,12 +332,13 @@ pub fn get_data(
         .load::<Upload>(&mut connection)
         .expect("Error loading posts.");
 
-    println!("Displaying {} posts", results.len());
-    for post in results {
-        println!("{}", post.device_id);
-        println!("-----------\n");
-        println!("{}", post.filename);
-    }
+    // println!("Displaying {} posts", results.len());
+    // for post in results {
+    //     println!("{}", post.device_id);
+    //     println!("-----------\n");
+    //     println!("{}", post.filename);
+    // }
+    Ok(results)
 }
 
 #[tauri::command]
