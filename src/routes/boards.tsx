@@ -30,7 +30,7 @@ export default function Boards() {
     [
       {
         id: "actions",
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           return (
             <div className="flex gap-4">
               <Button onClick={() => getFileContent(row.original.filename)}>
@@ -84,7 +84,7 @@ export default function Boards() {
         description: "Files synced succesfully",
         duration: 3000,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         description: `Error syncing files, ${error.message}`,
@@ -117,7 +117,7 @@ export default function Boards() {
     }
   };
 
-  const getFileContent = async (fileName: String) => {
+  const getFileContent = async (fileName: string) => {
     try {
       console.log(
         "Getting file content from selected board with name: ",
@@ -135,7 +135,7 @@ export default function Boards() {
       //   console.log("Hashes are not equal");
       // }
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         description: `Error copying file: ${error.message}`,
@@ -145,7 +145,7 @@ export default function Boards() {
     }
   };
 
-  const saveDataToFile = async (data, filePath) => {
+  const saveDataToFile = async (data: string, filePath: string) => {
     try {
       await invoke("save_data_to_file", {
         data: data,
@@ -158,7 +158,7 @@ export default function Boards() {
         duration: 3000,
       });
       console.log("Daten erfolgreich gespeichert.");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         description: `Error trying to save file on disk: ${error.message}`,

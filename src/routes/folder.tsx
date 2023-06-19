@@ -42,7 +42,7 @@ export default function Folder() {
     [
       {
         id: "actions",
-        cell: ({ row }) => {
+        cell: ({ row }: any) => {
           return (
             <UploadDialog
               filename={row.original.filename}

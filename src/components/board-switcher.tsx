@@ -34,7 +34,9 @@ interface BoardSwitcherProps extends PopoverTriggerProps {}
 export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   const [open, setOpen] = React.useState(false);
   const [serialPorts, setSerialPorts] = React.useState<SerialPort[]>();
-  const [selectedBoard, setSelectedBoard] = React.useState<SerialPort>(null);
+  const [selectedBoard, setSelectedBoard] = React.useState<SerialPort | null>(
+    null
+  );
   const { setConfig, setSerialPort } = useBoardStore();
   const [loading, setLoading] = React.useState(false);
   async function listSerialports() {
