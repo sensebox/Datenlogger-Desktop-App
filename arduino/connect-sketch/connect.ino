@@ -145,9 +145,11 @@ void executeCommand() {
     case 2:
       printFileContent(cmdMsg);
       break;
-    case 3:
-      printFileContent("/config/CONFIG.CFG");
+    case 3: {
+      String configFilename = findConfigFile();
+      printFileContent(configFilename.c_str());
       break;
+    }
     case 4:
       deleteFile(cmdMsg);
       break;
@@ -337,11 +339,58 @@ void deleteFile(const char* fileName) {
   }
 }
 
-void getFileContent(File file) {
+String getFileContent(File file) {
   // Lesen und Ausgeben des Dateiinhalts
   while (file.available()) {
     char data = file.read();
     Serial.write(data);
   }
   Serial.println();
+}
+
+ String findConfigFile() {
+  String configFilename = "";
+  bool configFileFound = false;
+  // Öffnen des Root-Verzeichnisses
+  File root = SD.open("/");
+  if (!root) {
+    Serial.println("Fehler beim Öffnen des Root-Verzeichnisses");
+    return "Error opening root folder";
+  }
+  // Durchsuchen aller Dateien und Ordner im Root-Verzeichnis
+  while (!configFileFound) {
+    File file = root.openNextFile();
+    if (!file) {
+      // Es wurden alle Dateien und Ordner durchlaufen
+      break;
+    }
+
+    // Überprüfen, ob es sich um ein Verzeichnis handelt
+    if (file.isDirectory()) {
+      // Ausgabe des Verzeichnisnamens im seriellen Monitor
+      continue;
+    }
+    else {
+      // Ausgabe des Dateinamens im seriellen Monitor
+      String fileName = file.name();
+
+      // Skip special MacOS files
+      if(fileName.indexOf("~") > 0) {
+        continue;
+      }
+
+      if (fileName.endsWith(".cfg") || fileName.endsWith(".CFG")) {
+        configFilename = fileName;
+        break;
+      }
+    }
+
+    // Schließen der Datei
+    file.close();
+  }
+
+  // Schließen des Root-Verzeichnisses
+  root.close();
+
+  return configFilename;
 }
