@@ -2,6 +2,7 @@ use serde::{Serialize, Serializer, ser::SerializeStruct};
 
 #[derive(Default, Debug)]
 pub struct SenseboxConfig {
+    pub name: String,
     pub sensebox_id: String,
     pub ssid: String,
     pub psk: String,
@@ -29,6 +30,7 @@ impl Serialize for SenseboxConfig {
         S: Serializer,
     {
         let mut s = serializer.serialize_struct("SenseboxConfig", 4)?;
+        s.serialize_field("name", &self.name)?;
         s.serialize_field("sensebox_id", &self.sensebox_id)?;
         s.serialize_field("ssid", &self.ssid)?;
         s.serialize_field("psk", &self.psk)?;

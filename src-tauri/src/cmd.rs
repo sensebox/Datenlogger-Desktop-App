@@ -102,30 +102,42 @@ pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, 
 
     // Read data
     let mut buffer = String::new();
-    port.read_to_string(&mut buffer);
+    loop {
+        let available_bytes = match port.bytes_to_read() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
+        };
+        if available_bytes == 0 {
+            println!("No more data");
+            break;
+        }
+        port.read_to_string(&mut buffer);
+    }
 
-    // let parts: Vec<&str> = buffer.trim().split('|').collect();
-    // if parts.len() < 3 {
-    //     panic!("Invalid response format");
-    // }
+    let parts: Vec<&str> = buffer.trim().split('|').collect();
+    if parts.len() < 3 {
+        panic!("Invalid response format");
+    }
 
-    // let filename = parts[0].to_string();
-    // let content = parts[1].to_string();
-    // let md5hash = parts[2].to_string();
+    let content = parts[1].to_string();
 
     println!("result: {}", buffer);
 
     // Parse config.cfg string and serialize into SenseboxConfig
     let mut config: SenseboxConfig = SenseboxConfig::new();
-    for line in buffer.lines() {
+    for line in content.lines() {
         if !line.starts_with("#") && line.len() > 0 {
             let parts: Vec<&str> = line.split("=").collect();
             match parts[0] {
+                "NAME" => config.name = parts[1].to_string(),
                 "SENSEBOX_ID" => config.sensebox_id = parts[1].to_string(),
+                "DEVICE_ID" => config.sensebox_id = parts[1].to_string(),
                 "SSID" => config.ssid = parts[1].to_string(),
                 "PSK" => config.psk = parts[1].to_string(),
                 "TEMP_ID" => config.temp_id = parts[1].to_string(),
+                "TEMPERATUR_SENSORID" => config.temp_id = parts[1].to_string(),
                 "HUMI_ID" => config.humi_id = parts[1].to_string(),
+                "LUFTFEUCHTE_SENSORID" => config.humi_id = parts[1].to_string(),
                 "DIST_L_ID" => config.dist_l_id = parts[1].to_string(),
                 "DIST_R_ID" => config.dist_r_id = parts[1].to_string(),
                 "PM10_ID" => config.pm10_id = parts[1].to_string(),

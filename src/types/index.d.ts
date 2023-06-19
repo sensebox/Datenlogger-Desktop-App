@@ -25,6 +25,7 @@ type Device = {
 };
 
 type SenseboxConfig = {
+  name: string;
   sensebox_id: string;
   ssid: string;
   psk: string;

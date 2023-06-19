@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBoardStore } from "@/lib/store/board";
 import { FileContent } from "@/types";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
+import { Bot, Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import crypto from "crypto";
 import { DataTable } from "@/components/data-table";
@@ -181,7 +181,7 @@ export default function Boards() {
         </div>
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="md:col-span-1 lg:col-span-2">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Device Overview
@@ -194,6 +194,12 @@ export default function Boards() {
                     <Fingerprint className="mr-1 h-3 w-3" />
                     {config ? config.sensebox_id : "No device selected"}
                   </Badge>
+                  {config && config.name ? (
+                    <Badge>
+                      <Bot className="mr-1 h-3 w-3" />
+                      {config.name}
+                    </Badge>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
