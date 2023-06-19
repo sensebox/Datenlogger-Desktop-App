@@ -60,7 +60,13 @@ export default function Boards() {
         `.reedu/data/${config?.sensebox_id}`
       );
 
-      const fileArray = files.split("\r\n");
+      const fileArray = files.split("\r\n").filter((file) => {
+        const [fileName] = file.split(",");
+        if (!fileName.includes("~") && fileName.endsWith(".CSV")) {
+          return file;
+        }
+      });
+      console.log(fileArray);
       // pop last element as its always empty
       fileArray.pop();
       const data: File[] = fileArray.map((file) => {

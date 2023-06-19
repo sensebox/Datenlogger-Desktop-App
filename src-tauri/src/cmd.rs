@@ -196,7 +196,7 @@ pub fn connect_list_files(port: &str, command: &str) -> Result<String, String> {
     let mut buffer = String::new();
     port.read_to_string(&mut buffer);
 
-    // println!("result: {}", buffer);
+    println!("result: {}", buffer);
 
     Ok(buffer)
 }
