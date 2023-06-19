@@ -184,7 +184,7 @@ pub fn connect_list_files(port: &str, command: &str) -> Result<String, String> {
     let mut buffer = String::new();
     port.read_to_string(&mut buffer);
 
-    println!("result: {}", buffer);
+    // println!("result: {}", buffer);
 
     Ok(buffer)
 }
@@ -223,7 +223,7 @@ pub fn delete_file(port: &str, command: &str) -> Result<String, String> {
     // Read data
     let mut buffer = String::new();
     port.read_to_string(&mut buffer);
-    println!("result: {}", buffer);
+    // println!("result: {}", buffer);
 
     Ok(buffer)
 }
@@ -274,7 +274,7 @@ pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
     }
     // let mut buffer = String::new();
     // port.read_to_string(&mut buffer);
-    println!("result: {}", buffer);
+    // println!("result: {}", buffer);
 
     let parts: Vec<&str> = buffer.trim().split('|').collect();
     if parts.len() < 3 {
