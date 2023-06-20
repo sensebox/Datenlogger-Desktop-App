@@ -15,6 +15,7 @@ mod models;
 mod schema;
 mod sensebox;
 mod serialports;
+mod fileinfo;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 

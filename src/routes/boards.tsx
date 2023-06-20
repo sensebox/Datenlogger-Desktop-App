@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBoardStore } from "@/lib/store/board";
-import { FileContent } from "@/types";
+import { FileContent, FileInfo } from "@/types";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Bot, Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -51,33 +51,26 @@ export default function Boards() {
       setLoading(true);
 
       // Invoke rust function to get all CSV files from SD card
-      const files: String = await invoke("connect_list_files", {
+      const files: FileInfo[] = await invoke("connect_list_files", {
         port: serialPort?.port,
         command: "<1 root>",
       });
+      const csvFiles = files.filter(
+        (file) => !file.filename.includes("~") && file.filename.endsWith(".CSV")
+      );
 
       const syncedFiles = await readDirectory(
         `.reedu/data/${config?.sensebox_id}`
       );
 
-      const fileArray = files.split("\r\n").filter((file) => {
-        const [fileName] = file.split(",");
-        if (!fileName.includes("~") && fileName.endsWith(".CSV")) {
-          return file;
-        }
-      });
-      console.log(fileArray);
-      // pop last element as its always empty
-      fileArray.pop();
-      const data: File[] = fileArray.map((file) => {
-        const [fileName, size] = file.split(",");
+      const data: File[] = csvFiles.map((file) => {
         const fileIsSynced = syncedFiles.findIndex(
-          (syncedFile) => syncedFile.name === fileName
+          (syncedFile) => syncedFile.name === file.filename
         );
 
         return {
-          filename: fileName,
-          size: size,
+          filename: file.filename,
+          size: file.size,
           status: fileIsSynced >= 0 ? "synced" : "pending",
         };
       });

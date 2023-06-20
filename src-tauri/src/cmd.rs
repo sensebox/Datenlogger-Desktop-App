@@ -5,6 +5,7 @@ use crate::models::{NewPost, Post, NewUpload, Upload, Test};
 use crate::schema::uploads::{self, device_id};
 use crate::sensebox::SenseboxConfig;
 use crate::serialports::SerialPorts;
+use crate::fileinfo::FileInfo;
 use serde::{Deserialize, Serialize};
 use serialport::SerialPortType;
 use tauri::command;
@@ -156,7 +157,7 @@ pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, 
 
 
 #[command]
-pub fn connect_list_files(port: &str, command: &str) -> Result<String, String> {
+pub fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
     // Open port
     println!("Port: {}", port.to_string());
     let mut port = match serialport::new(port.to_string(), 115_200)
@@ -193,12 +194,35 @@ pub fn connect_list_files(port: &str, command: &str) -> Result<String, String> {
     }
 
     // Read data
+    // let mut buffer = String::new();
+    // port.read_to_string(&mut buffer);
     let mut buffer = String::new();
-    port.read_to_string(&mut buffer);
+    loop {
+        let available_bytes = match port.bytes_to_read() {
+            Ok(bytes) => bytes,
+            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
+        };
+        if available_bytes == 0 {
+            println!("No more data");
+            break;
+        }
+        port.read_to_string(&mut buffer);
+    }
 
-    println!("result: {}", buffer);
+    // Parse config.cfg string and serialize into SenseboxConfig
+    let mut files: Vec<FileInfo> = Vec::new();
+    for line in buffer.lines() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.len() == 2 {
+            files.push(FileInfo {
+                filename: parts[0].to_string(),
+                size: parts[1].to_string()
+            });
+        }
+    }
+    println!("{}", files.len());
 
-    Ok(buffer)
+    Ok(files)
 }
 
 #[command]

@@ -226,7 +226,7 @@ SdFile getParentDir(const char *filepath, int *index) {
 
     // do the interactive search
     SdFile parentdir = getParentDir("/", &pathidx);
-    parentdir.ls(LS_R);
+    parentdir.ls(LS_SIZE);
  }
 
  void printAllFiles() {

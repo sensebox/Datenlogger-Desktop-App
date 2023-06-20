@@ -21,6 +21,7 @@ import {
 import { invoke } from "@tauri-apps/api/tauri";
 import { SenseboxConfig, SerialPort } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
+import { createDirectory } from "@/lib/fs";
 // import LoadingOverlay from "./ui/LoadingOverlay";
 // import { ToastContainer } from "react-toastify";
 // import showToast from "../helper/showToast";
@@ -50,7 +51,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
         port: serialPort.port,
         command: "<3 config>",
       });
-      console.log("BoardSwitcher: ", boardConfig);
+      await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
       setConfig(boardConfig);
       setSerialPort(serialPort);
       setLoading(false);

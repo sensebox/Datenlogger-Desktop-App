@@ -67,6 +67,11 @@ type Upload = {
   uploaded_at: Date;
 };
 
+type FileInfo = {
+  filename: string;
+  size: string;
+};
+
 export {
   Device,
   SerialPort,
@@ -76,4 +81,5 @@ export {
   SignInData,
   SignInResponse,
   Upload,
+  FileInfo,
 };
