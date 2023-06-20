@@ -125,7 +125,7 @@ export default function Boards() {
       setLoading(true);
       const fileContent: FileContent = await invoke("get_file_content", {
         port: serialPort?.port,
-        command: `<2 /logs/${fileName}>`,
+        command: `<2 /${fileName}>`,
       });
       saveDataToFile(fileContent.content, fileName);
       // const hash = calculateMd5hash(fileContent.content);
