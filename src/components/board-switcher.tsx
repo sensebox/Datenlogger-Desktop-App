@@ -22,6 +22,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { SenseboxConfig, SerialPort } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
 import { createDirectory } from "@/lib/fs";
+import LoadingOverlay from "./ui/LoadingOverlay";
 // import LoadingOverlay from "./ui/LoadingOverlay";
 // import { ToastContainer } from "react-toastify";
 // import showToast from "../helper/showToast";
@@ -137,6 +138,11 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
           </Command>
         </PopoverContent>
       </Popover>
+      {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null}
       {/* <ToastContainer /> */}
     </Dialog>
   );

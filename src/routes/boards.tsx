@@ -11,6 +11,7 @@ import { DataTable } from "@/components/data-table";
 import { File, getColumns } from "@/lib/columns/files";
 import { useToast } from "@/components/ui/use-toast";
 import { readDirectory } from "@/lib/fs";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 export default function Boards() {
   const { toast } = useToast();
@@ -206,6 +207,11 @@ export default function Boards() {
           <DataTable columns={columns} data={data} />
         </div>
       </div>
+      {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null}
     </div>
   );
 }
