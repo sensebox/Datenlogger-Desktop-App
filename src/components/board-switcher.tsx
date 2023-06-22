@@ -23,8 +23,7 @@ import { SenseboxConfig, SerialPort } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
 import { createDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
-// import { ToastContainer } from "react-toastify";
-// import showToast from "../helper/showToast";
+import { useToast } from "./ui/use-toast";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -33,6 +32,8 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 interface BoardSwitcherProps extends PopoverTriggerProps {}
 
 export default function BoardSwitcher({ className }: BoardSwitcherProps) {
+  const { toast } = useToast();
+
   const [open, setOpen] = React.useState(false);
   const [serialPorts, setSerialPorts] = React.useState<SerialPort[]>();
   const [selectedBoard, setSelectedBoard] = React.useState<SerialPort | null>(
@@ -56,10 +57,15 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       setSerialPort(serialPort);
       setLoading(false);
       // showToast(`Successfully opened board at:${serialPort.port} `, "success");
-    } catch (error) {
+    } catch (error: any) {
       setLoading(false);
       console.log(error);
-      // showToast(`Error opening port: ${error}`, "error");
+      toast({
+        variant: "destructive",
+        title: error.message,
+        description: error,
+        duration: 5000,
+      });
     }
   }
 
@@ -142,7 +148,6 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
           <LoadingOverlay></LoadingOverlay>
         </div>
       ) : null}
-      {/* <ToastContainer /> */}
     </Dialog>
   );
 }
