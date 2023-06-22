@@ -30,8 +30,8 @@ export default function Upload() {
                 <h4 className="mb-4 text-sm font-medium leading-none">
                   Device folders
                 </h4>
-                {folders.map((folder) => (
-                  <div id={folder.name}>
+                {folders.map((folder, index) => (
+                  <div key={index} id={folder.name}>
                     <Link to={`/upload/${folder.name}`}>{folder.name}</Link>
                     <Separator className="my-2" />
                   </div>

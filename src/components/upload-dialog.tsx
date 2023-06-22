@@ -84,20 +84,20 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
         description: answer.message,
         duration: 5000,
       });
+    } else {
+      await invoke("insert_data", {
+        filename: filename,
+        device: selectedDevice?._id,
+        checksum: "",
+      });
+
+      toast({
+        description: answer,
+        duration: 5000,
+      });
+
+      event.preventDefault();
     }
-
-    await invoke("insert_data", {
-      filename: filename,
-      device: selectedDevice?._id,
-      checksum: "",
-    });
-
-    toast({
-      description: answer,
-      duration: 5000,
-    });
-
-    event.preventDefault();
   };
 
   const onValueChange = (deviceId: string) => {

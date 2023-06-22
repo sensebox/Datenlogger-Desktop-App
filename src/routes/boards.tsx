@@ -37,7 +37,7 @@ export default function Boards() {
               <Button onClick={() => getFileContent(row.original.filename)}>
                 <Save className="mr-2 h-4 w-4" /> Copy
               </Button>
-              <Button onClick={() => console.log("tbd")}>
+              <Button disabled={true} onClick={() => console.log("tbd")}>
                 <Delete className="mr-2 h-4 w-4" /> Delete
               </Button>
             </div>
@@ -73,6 +73,7 @@ export default function Boards() {
           filename: file.filename,
           size: file.size,
           status: fileIsSynced >= 0 ? "synced" : "pending",
+          createdAt: "N/A",
         };
       });
 
