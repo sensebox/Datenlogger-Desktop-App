@@ -71,11 +71,6 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
 
   return (
     <Dialog>
-      {/* {loading ? (
-        <div>
-          <LoadingOverlay></LoadingOverlay>
-        </div>
-      ) : null} */}
       <Popover
         open={open}
         onOpenChange={() => {
