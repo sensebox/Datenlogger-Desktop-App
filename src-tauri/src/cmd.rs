@@ -1,15 +1,15 @@
 use std::time::Duration;
 
 use crate::db;
-use crate::models::{NewPost, Post, NewUpload, Upload, Test};
+use crate::fileinfo::FileInfo;
+use crate::models::{NewPost, NewUpload, Post, Test, Upload};
 use crate::schema::uploads::{self, device_id};
 use crate::sensebox::SenseboxConfig;
 use crate::serialports::SerialPorts;
-use crate::fileinfo::FileInfo;
 use serde::{Deserialize, Serialize};
 use serialport::SerialPortType;
-use tauri::command;
 use std::{env, path};
+use tauri::command;
 
 use diesel::prelude::*;
 #[derive(Serialize, Deserialize)]
@@ -45,13 +45,22 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
                 );
                 let a = info.product.as_ref().map_or("", String::as_str);
                 let b = "senseBox MCU";
-                // if &a == &b {
-                serial_ports.push(SerialPorts::new(
-                    p.port_name,
-                    info.serial_number.unwrap_or("".to_owned()),
-                    info.manufacturer.unwrap_or("".to_owned()),
-                    info.product.unwrap_or("".to_owned()),
-                ));
+
+                if (info.vid == 0x04d8 && info.pid == 0xef67) {
+                    serial_ports.push(SerialPorts::new(
+                        p.port_name,
+                        info.serial_number.unwrap_or("".to_owned()),
+                        "senseBox".to_owned(),
+                        "senseBox MCU".to_owned(),
+                    ))
+                } else {
+                    serial_ports.push(SerialPorts::new(
+                        p.port_name,
+                        info.serial_number.unwrap_or("".to_owned()),
+                        info.manufacturer.unwrap_or("".to_owned()),
+                        info.product.unwrap_or("".to_owned()),
+                    ));
+                }
                 // }
             }
             SerialPortType::BluetoothPort => {
@@ -155,7 +164,6 @@ pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, 
     Ok(config)
 }
 
-
 #[command]
 pub fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
     // Open port
@@ -216,7 +224,7 @@ pub fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, St
         if parts.len() == 2 {
             files.push(FileInfo {
                 filename: parts[0].to_string(),
-                size: parts[1].to_string()
+                size: parts[1].to_string(),
             });
         }
     }
@@ -335,7 +343,10 @@ pub fn save_data_to_file(
     file_path: String,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap()).join(".reedu").join("data").join(device_folder);
+    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap())
+        .join(".reedu")
+        .join("data")
+        .join(device_folder);
 
     std::fs::create_dir(&app_dir);
 
@@ -356,9 +367,7 @@ pub fn save_data_to_file(
 }
 
 #[command]
-pub fn get_data(
-    device: String
-) -> Result<Vec<Upload>, String> {
+pub fn get_data(device: String) -> Result<Vec<Upload>, String> {
     use crate::schema::uploads::dsl::*;
 
     let mut connection = db::establish_connection();
@@ -378,11 +387,7 @@ pub fn get_data(
 }
 
 #[tauri::command]
-pub fn insert_data(
-    filename: String,
-    device: String,
-    checksum: String
-) {
+pub fn insert_data(filename: String, device: String, checksum: String) {
     use crate::schema::uploads;
 
     let mut connection = db::establish_connection();
@@ -390,7 +395,7 @@ pub fn insert_data(
     let new_upload = NewUpload {
         filename: &filename,
         device_id: &device,
-        checksum: &checksum
+        checksum: &checksum,
     };
 
     let result = diesel::insert_into(uploads::table)

@@ -76,7 +76,7 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
     const answer = await response.json();
     console.log(answer);
 
-    if (answer.code === "BadRequest" || "UnprocessableEntity") {
+    if (answer.code === "BadRequest" || answer.code === "UnprocessableEntity") {
       setOpen(false);
       toast({
         variant: "destructive",
@@ -84,19 +84,18 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
         description: answer.message,
         duration: 5000,
       });
+    } else {
+      toast({
+        title: answer,
+        description: answer,
+        duration: 5000,
+      });
+      await invoke("insert_data", {
+        filename: filename,
+        device: selectedDevice?._id,
+        checksum: "",
+      });
     }
-
-    await invoke("insert_data", {
-      filename: filename,
-      device: selectedDevice?._id,
-      checksum: "",
-    });
-
-    toast({
-      description: answer,
-      duration: 5000,
-    });
-
     event.preventDefault();
   };
 

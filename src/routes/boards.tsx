@@ -11,6 +11,7 @@ import { DataTable } from "@/components/data-table";
 import { File, getColumns } from "@/lib/columns/files";
 import { useToast } from "@/components/ui/use-toast";
 import { readDirectory } from "@/lib/fs";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
 
 export default function Boards() {
   const { toast } = useToast();
@@ -36,7 +37,7 @@ export default function Boards() {
               <Button onClick={() => getFileContent(row.original.filename)}>
                 <Save className="mr-2 h-4 w-4" /> Copy
               </Button>
-              <Button onClick={() => console.log("tbd")}>
+              <Button disabled={true} onClick={() => console.log("tbd")}>
                 <Delete className="mr-2 h-4 w-4" /> Delete
               </Button>
             </div>
@@ -72,6 +73,7 @@ export default function Boards() {
           filename: file.filename,
           size: file.size,
           status: fileIsSynced >= 0 ? "synced" : "pending",
+          createdAt: "N/A",
         };
       });
 
@@ -125,7 +127,7 @@ export default function Boards() {
       setLoading(true);
       const fileContent: FileContent = await invoke("get_file_content", {
         port: serialPort?.port,
-        command: `<2 /logs/${fileName}>`,
+        command: `<2 /${fileName}>`,
       });
       saveDataToFile(fileContent.content, fileName);
       // const hash = calculateMd5hash(fileContent.content);
@@ -206,6 +208,11 @@ export default function Boards() {
           <DataTable columns={columns} data={data} />
         </div>
       </div>
+      {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null}
     </div>
   );
 }
