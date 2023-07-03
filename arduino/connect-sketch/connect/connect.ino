@@ -11,7 +11,7 @@
 #include <SD.h>
 #include <SPI.h>
 #include <senseBoxIO.h>
-#include <MD5.h>
+// #include <MD5.h>
 
 // set up variables using the SD utility library functions:
 Sd2Card card;
@@ -318,14 +318,14 @@ void printFileContent(const char* filename) {
   }
 }
 
-void printMd5Hash (char* fileContent, size_t bufferSize ){
-    unsigned char* hash = MD5::make_hash(fileContent);
-    char *md5str = MD5::make_digest(hash,16);
+// void printMd5Hash (char* fileContent, size_t bufferSize ){
+//     unsigned char* hash = MD5::make_hash(fileContent);
+//     char *md5str = MD5::make_digest(hash,16);
 
-    Serial.write(md5str);
-    free(md5str);
-    free(hash);
-}
+//     Serial.write(md5str);
+//     free(md5str);
+//     free(hash);
+// }
 
 void deleteFile(const char* fileName) {
   if (SD.exists(fileName)) {
