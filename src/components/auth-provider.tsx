@@ -18,19 +18,16 @@ const fakeAuth = async (
   username: string,
   password: string
 ): Promise<SignInResponse> => {
-  const response = await fetch(
-    `https://api.testing.opensensemap.org/users/sign-in`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        email: username,
-        password: password,
-      }),
-    }
-  );
+  const response = await fetch(`https://api.opensensemap.org/users/sign-in`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: username,
+      password: password,
+    }),
+  });
   const user = await response.json();
   return user;
 };
