@@ -47,7 +47,7 @@ export function UploadDialog({
   useEffect(() => {
     const fetchDevices = async () => {
       const response = await fetch(
-        "https://api.testing.opensensemap.org/users/me/boxes",
+        "https://api.opensensemap.org/users/me/boxes",
         {
           headers: {
             Authorization: `Bearer ${signInResponse?.token}`,
