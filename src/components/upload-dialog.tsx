@@ -22,6 +22,7 @@ import { Device } from "@/types";
 import { useAuth } from "./auth-provider";
 import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
+import LoadingOverlay from "./ui/LoadingOverlay";
 
 type UploadDialogProps = {
   filename: string;
@@ -34,7 +35,7 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
   const [open, setOpen] = useState<boolean>(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device>();
-
+  const [loading, setLoading] = useState<boolean>(false);
   const { signInResponse } = useAuth();
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
   }, []);
 
   const uploadFile = async (event: any) => {
+    setLoading(true);
     const csv = await readCSVFile(
       `.reedu/data/${selectedDevice?._id}/${filename}`
     );
@@ -96,6 +98,7 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
         checksum: "",
       });
     }
+    setLoading(false);
     event.preventDefault();
   };
 
@@ -146,6 +149,11 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
           </Button>
         </DialogFooter>
       </DialogContent>
+      {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null}
     </Dialog>
   );
 }
