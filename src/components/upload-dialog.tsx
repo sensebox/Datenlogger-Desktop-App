@@ -40,13 +40,14 @@ export function UploadDialog({
   const [open, setOpen] = useState<boolean>(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device>();
+  const [selectedDeviceSecrets, setSelectedDeviceSecrets] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { signInResponse } = useAuth();
 
   useEffect(() => {
     const fetchDevices = async () => {
       const response = await fetch(
-        "https://api.opensensemap.org/users/me/boxes",
+        "https://api.testing.opensensemap.org/users/me/boxes",
         {
           headers: {
             Authorization: `Bearer ${signInResponse?.token}`,
@@ -63,6 +64,21 @@ export function UploadDialog({
     fetchDevices();
   }, []);
 
+  const fetchDeviceSecrets = async (deviceId: string) => {
+    console.log(deviceId);
+    const response = await fetch(
+      `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${signInResponse?.token}`,
+        },
+      }
+    );
+    const device = await response.json();
+    console.log(device);
+    setSelectedDeviceSecrets(device.data);
+  };
+
   const uploadFile = async (event: any) => {
     setLoading(true);
     const csv = await readCSVFile(
@@ -74,7 +90,7 @@ export function UploadDialog({
       {
         method: "POST",
         headers: {
-          Authorization: `${selectedDevice?.access_token}`,
+          Authorization: `${selectedDeviceSecrets?.box.access_token}`,
           "content-type": "text/csv",
         },
         body: csv,
@@ -114,7 +130,13 @@ export function UploadDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(e) => {
+        setOpen(e);
+        fetchDeviceSecrets(deviceId);
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileUp className="mr-2 h-4 w-4" />
@@ -125,12 +147,28 @@ export function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
-            Upload measurements included in the selelected CSV to a device on
-            openSenseMap.
+            Your uploading the file <b>{filename}</b> to the device{" "}
+            <b>{deviceId}</b>.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Select
+          {selectedDeviceSecrets.box && (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">
+                {selectedDeviceSecrets.box.name}
+              </span>
+              <span className="text-sm">
+                The id of this box is: {selectedDeviceSecrets.box._id}
+              </span>
+              <span className="text-sm"></span>
+              <span className="text-sm">
+                The last measurement of this box was at:{" "}
+                {selectedDeviceSecrets.box.lastMeasurementAt}
+              </span>
+              Are you sure you want to upload the file to this device?
+            </div>
+          )}
+          {/* <Select
             value={selectedDevice ? selectedDevice._id : ""}
             onValueChange={onValueChange}
           >
@@ -147,7 +185,7 @@ export function UploadDialog({
                   );
                 })}
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
         <DialogFooter>
           <Button disabled={selectedDevice === undefined} onClick={uploadFile}>
