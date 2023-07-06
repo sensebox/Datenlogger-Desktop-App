@@ -27,9 +27,14 @@ import LoadingOverlay from "./ui/LoadingOverlay";
 type UploadDialogProps = {
   filename: string;
   deviceId: string;
+  setCounter: any;
 };
 
-export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
+export function UploadDialog({
+  filename,
+  deviceId,
+  setCounter,
+}: UploadDialogProps) {
   const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
@@ -99,6 +104,7 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
       });
     }
     setLoading(false);
+    setCounter((counter: number) => counter + 1);
     event.preventDefault();
   };
 
