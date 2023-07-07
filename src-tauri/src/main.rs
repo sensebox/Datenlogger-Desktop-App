@@ -11,16 +11,15 @@ mod cmd;
 mod core;
 
 mod db;
+mod fileinfo;
 mod models;
 mod schema;
 mod sensebox;
 mod serialports;
-mod fileinfo;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 
 fn main() {
-
     core::config::UserConfig::init_config();
 
     let context = tauri::generate_context!();
@@ -41,6 +40,7 @@ fn main() {
             cmd::get_file_content,
             cmd::get_data,
             cmd::insert_data,
+            cmd::open_in_explorer,
         ])
         .run(context)
         .expect("error while running tauri application");

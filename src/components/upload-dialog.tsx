@@ -74,6 +74,17 @@ export function UploadDialog({
         },
       }
     );
+    const answer = await response.json();
+    if (answer.code === "BadRequest" || answer.code === "UnprocessableEntity") {
+      setOpen(false);
+      toast({
+        variant: "destructive",
+        title: answer.code,
+        description: answer.message,
+        duration: 5000,
+      });
+    }
+
     const device = await response.json();
     console.log(device);
     setSelectedDeviceSecrets(device.data);
@@ -147,8 +158,15 @@ export function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
-            Your uploading the file <b>{filename}</b> to the device{" "}
-            <b>{deviceId}</b>.
+            {selectedDeviceSecrets.box && (
+              <div className="flex flex-col">
+                Your uploading the file <b>{filename}</b> to the device{" "}
+                <b>{deviceId}</b>.
+              </div>
+            )}
+            {!selectedDeviceSecrets.box && (
+              <div className="flex flex-col">There has been an error</div>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -166,6 +184,12 @@ export function UploadDialog({
                 {selectedDeviceSecrets.box.lastMeasurementAt}
               </span>
               Are you sure you want to upload the file to this device?
+            </div>
+          )}
+          {!selectedDeviceSecrets.box && (
+            <div className="flex flex-col">
+              There has been an error with getting the box credentials, does{" "}
+              {deviceId} exist and are you the owner of it?
             </div>
           )}
           {/* <Select
