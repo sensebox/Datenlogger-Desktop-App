@@ -83,20 +83,20 @@ export function UploadDialog({
         description: answer.message,
         duration: 5000,
       });
+    } else {
+      setSelectedDeviceSecrets(answer.data);
     }
-
-    setSelectedDeviceSecrets(answer.data);
     setLoading(false);
   };
 
   const uploadFile = async (event: any) => {
     setLoading(true);
     const csv = await readCSVFile(
-      `.reedu/data/${selectedDevice?._id}/${filename}`
+      `.reedu/data/${selectedDeviceSecrets.box._id}/${filename}`
     );
 
     const response = await fetch(
-      `https://api.opensensemap.org/boxes/${deviceId}/data`,
+      `https://api.opensensemap.org/boxes/${selectedDeviceSecrets.box._id}/data`,
       {
         method: "POST",
         headers: {
@@ -125,7 +125,7 @@ export function UploadDialog({
       });
       await invoke("insert_data", {
         filename: filename,
-        device: selectedDevice?._id,
+        device: selectedDeviceSecrets.box._id,
         checksum: "",
       });
     }
@@ -158,7 +158,6 @@ export function UploadDialog({
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
             {loading && <div> Loading ... </div>}
-
             {selectedDeviceSecrets.box && (
               <div className="flex flex-col">
                 Your uploading the file {filename} to the device {deviceId}.
@@ -178,7 +177,6 @@ export function UploadDialog({
               <span className="text-sm">
                 The id of this box is: {selectedDeviceSecrets.box._id}
               </span>
-              <span className="text-sm"></span>
               <span className="text-sm">
                 The last measurement of this box was at:{" "}
                 {selectedDeviceSecrets.box.lastMeasurementAt}
@@ -186,6 +184,7 @@ export function UploadDialog({
               Are you sure you want to upload the file to this device?
             </div>
           )}
+          {loading && <div> Loading ... </div>}
           {!selectedDeviceSecrets.box && (
             <div className="flex flex-col">
               There has been an error with getting the box credentials, does{" "}
