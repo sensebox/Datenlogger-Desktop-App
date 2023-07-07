@@ -65,7 +65,7 @@ export function UploadDialog({
   }, []);
 
   const fetchDeviceSecrets = async (deviceId: string) => {
-    console.log(deviceId);
+    setLoading(true);
     const response = await fetch(
       `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
       {
@@ -85,9 +85,8 @@ export function UploadDialog({
       });
     }
 
-    const device = await response.json();
-    console.log(device);
-    setSelectedDeviceSecrets(device.data);
+    setSelectedDeviceSecrets(answer.data);
+    setLoading(false);
   };
 
   const uploadFile = async (event: any) => {
@@ -158,10 +157,11 @@ export function UploadDialog({
         <DialogHeader>
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
+            {loading && <div> Loading ... </div>}
+
             {selectedDeviceSecrets.box && (
               <div className="flex flex-col">
-                Your uploading the file <b>{filename}</b> to the device{" "}
-                <b>{deviceId}</b>.
+                Your uploading the file {filename} to the device {deviceId}.
               </div>
             )}
             {!selectedDeviceSecrets.box && (
@@ -212,7 +212,10 @@ export function UploadDialog({
           </Select> */}
         </div>
         <DialogFooter>
-          <Button disabled={selectedDevice === undefined} onClick={uploadFile}>
+          <Button
+            disabled={selectedDeviceSecrets === undefined}
+            onClick={uploadFile}
+          >
             Upload
           </Button>
         </DialogFooter>
