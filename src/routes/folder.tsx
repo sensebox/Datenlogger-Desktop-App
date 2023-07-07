@@ -11,7 +11,8 @@ export default function Folder() {
   let params = useParams();
 
   const [data, setData] = useState<File[]>([]);
-
+  // use counter to trigger re-render of data table
+  const [counter, setCounter] = useState<number>(0);
   useEffect(() => {
     const readDir = async () => {
       const uploadedFiles: Upload[] = await invoke("get_data", {
@@ -35,7 +36,7 @@ export default function Folder() {
     };
 
     readDir();
-  }, [params]);
+  }, [params, counter]);
 
   const columns = getColumns(
     [],
@@ -47,6 +48,7 @@ export default function Folder() {
             <UploadDialog
               filename={row.original.filename}
               deviceId={params.folderId || ""}
+              setCounter={setCounter}
             />
           );
         },

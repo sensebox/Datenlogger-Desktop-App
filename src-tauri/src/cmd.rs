@@ -6,12 +6,12 @@ use crate::models::{NewPost, NewUpload, Post, Test, Upload};
 use crate::schema::uploads::{self, device_id};
 use crate::sensebox::SenseboxConfig;
 use crate::serialports::SerialPorts;
+use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serialport::SerialPortType;
+use std::process::Command;
 use std::{env, path};
 use tauri::command;
-
-use diesel::prelude::*;
 #[derive(Serialize, Deserialize)]
 pub struct File {
     pub filename: String,
@@ -403,4 +403,34 @@ pub fn insert_data(filename: String, device: String, checksum: String) {
         .execute(&mut connection);
 
     println!("{:?}", result);
+}
+
+#[tauri::command]
+pub fn open_in_explorer() {
+    // Überprüfen, welches Betriebssystem ausgeführt wird
+
+    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap())
+        .join(".reedu")
+        .join("data");
+
+    print!("Running on ");
+    if cfg!(target_os = "linux") {
+        println!("Linux");
+    } else if cfg!(target_os = "windows") {
+        println!("Windows");
+        // Windows
+        Command::new("explorer")
+            .args([app_dir]) // The comma after select is not a typo
+            .spawn()
+            .unwrap();
+    } else if cfg!(target_os = "macos") {
+        Command::new("open")
+            .args([app_dir]) // i don't have a mac so not 100% sure
+            .spawn()
+            .unwrap();
+
+        println!("Mac OS");
+    } else {
+        println!("Other");
+    }
 }

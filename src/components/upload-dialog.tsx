@@ -22,19 +22,26 @@ import { Device } from "@/types";
 import { useAuth } from "./auth-provider";
 import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
+import LoadingOverlay from "./ui/LoadingOverlay";
 
 type UploadDialogProps = {
   filename: string;
   deviceId: string;
+  setCounter: any;
 };
 
-export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
+export function UploadDialog({
+  filename,
+  deviceId,
+  setCounter,
+}: UploadDialogProps) {
   const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device>();
-
+  const [selectedDeviceSecrets, setSelectedDeviceSecrets] = useState<any>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const { signInResponse } = useAuth();
 
   useEffect(() => {
@@ -57,17 +64,43 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
     fetchDevices();
   }, []);
 
+  const fetchDeviceSecrets = async (deviceId: string) => {
+    setLoading(true);
+    const response = await fetch(
+      `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${signInResponse?.token}`,
+        },
+      }
+    );
+    const answer = await response.json();
+    if (answer.code === "BadRequest" || answer.code === "UnprocessableEntity") {
+      setOpen(false);
+      toast({
+        variant: "destructive",
+        title: answer.code,
+        description: answer.message,
+        duration: 5000,
+      });
+    } else {
+      setSelectedDeviceSecrets(answer.data);
+    }
+    setLoading(false);
+  };
+
   const uploadFile = async (event: any) => {
+    setLoading(true);
     const csv = await readCSVFile(
-      `.reedu/data/${selectedDevice?._id}/${filename}`
+      `.reedu/data/${selectedDeviceSecrets.box._id}/${filename}`
     );
 
     const response = await fetch(
-      `https://api.opensensemap.org/boxes/${deviceId}/data`,
+      `https://api.opensensemap.org/boxes/${selectedDeviceSecrets.box._id}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: `${selectedDevice?.access_token}`,
+          Authorization: `${selectedDeviceSecrets?.box.access_token}`,
           "content-type": "text/csv",
         },
         body: csv,
@@ -92,10 +125,12 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
       });
       await invoke("insert_data", {
         filename: filename,
-        device: selectedDevice?._id,
+        device: selectedDeviceSecrets.box._id,
         checksum: "",
       });
     }
+    setLoading(false);
+    setCounter((counter: number) => counter + 1);
     event.preventDefault();
   };
 
@@ -105,7 +140,13 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(e) => {
+        setOpen(e);
+        fetchDeviceSecrets(deviceId);
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileUp className="mr-2 h-4 w-4" />
@@ -116,12 +157,32 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
         <DialogHeader>
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
-            Upload measurements included in the selelected CSV to a device on
-            openSenseMap.
+            {loading && <div> Loading ... </div>}
+            {selectedDeviceSecrets.box && (
+              <div className="flex flex-col">
+                Your uploading the file {filename} to the device {deviceId}.
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Select
+          {selectedDeviceSecrets.box && (
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">
+                {selectedDeviceSecrets.box.name}
+              </span>
+              <span className="text-sm">
+                The id of this box is: {selectedDeviceSecrets.box._id}
+              </span>
+              <span className="text-sm">
+                The last measurement of this box was at:{" "}
+                {selectedDeviceSecrets.box.lastMeasurementAt}
+              </span>
+              Are you sure you want to upload the file to this device?
+            </div>
+          )}
+          {loading && <div> Loading ... </div>}
+          {/* <Select
             value={selectedDevice ? selectedDevice._id : ""}
             onValueChange={onValueChange}
           >
@@ -138,14 +199,22 @@ export function UploadDialog({ filename, deviceId }: UploadDialogProps) {
                   );
                 })}
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
         <DialogFooter>
-          <Button disabled={selectedDevice === undefined} onClick={uploadFile}>
+          <Button
+            disabled={selectedDeviceSecrets === undefined}
+            onClick={uploadFile}
+          >
             Upload
           </Button>
         </DialogFooter>
       </DialogContent>
+      {loading ? (
+        <div>
+          <LoadingOverlay></LoadingOverlay>
+        </div>
+      ) : null}
     </Dialog>
   );
 }
