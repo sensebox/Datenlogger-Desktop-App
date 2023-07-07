@@ -163,9 +163,6 @@ export function UploadDialog({
                 Your uploading the file {filename} to the device {deviceId}.
               </div>
             )}
-            {!selectedDeviceSecrets.box && (
-              <div className="flex flex-col">There has been an error</div>
-            )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -185,12 +182,6 @@ export function UploadDialog({
             </div>
           )}
           {loading && <div> Loading ... </div>}
-          {!selectedDeviceSecrets.box && (
-            <div className="flex flex-col">
-              There has been an error with getting the box credentials, does{" "}
-              {deviceId} exist and are you the owner of it?
-            </div>
-          )}
           {/* <Select
             value={selectedDevice ? selectedDevice._id : ""}
             onValueChange={onValueChange}
