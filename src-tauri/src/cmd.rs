@@ -318,13 +318,14 @@ pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
     }
     // let mut buffer = String::new();
     // port.read_to_string(&mut buffer);
-    // println!("result: {}", buffer);
+    println!("result: {}", buffer);
 
     let parts: Vec<&str> = buffer.trim().split('|').collect();
-    if parts.len() < 3 {
-        panic!("Invalid response format");
+    // if parts has more than 2 parts then return the parts as a File struct
+    // if not return an error
+    if parts.len() != 3 {
+        return Err("Error: File has less than 3 parts".to_string());
     }
-
     let filename = parts[0].to_string();
     let content = parts[1].to_string();
     let md5hash = parts[2].to_string();

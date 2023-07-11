@@ -139,7 +139,7 @@ export default function Boards() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        description: `Error copying file: ${error.message}`,
+        description: `Error copying file: ${error}`,
         duration: 3000,
       });
       setLoading(false);
