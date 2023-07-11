@@ -75,7 +75,12 @@ export function UploadDialog({
       }
     );
     const answer = await response.json();
-    if (answer.code === "BadRequest" || answer.code === "UnprocessableEntity") {
+    if (
+      answer.code === "BadRequest" ||
+      answer.code === "UnprocessableEntity" ||
+      answer.code === "Unauthorized" ||
+      answer.code === "Forbidden"
+    ) {
       setOpen(false);
       toast({
         variant: "destructive",
@@ -109,7 +114,14 @@ export function UploadDialog({
     const answer = await response.json();
     console.log(answer);
 
-    if (answer.code === "BadRequest" || answer.code === "UnprocessableEntity") {
+    // if answer code is anything but ok
+
+    if (
+      answer.code === "BadRequest" ||
+      answer.code === "UnprocessableEntity" ||
+      answer.code === "Unauthorized" ||
+      answer.code === "Forbidden"
+    ) {
       setOpen(false);
       toast({
         variant: "destructive",
