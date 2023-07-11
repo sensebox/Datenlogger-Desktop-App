@@ -43,7 +43,7 @@ void setup() {
     Serial.begin(115200);
 
     // wait for Serial Monitor to connect. Needed for native USB port boards only:
-    while (!Serial);
+    //while (!Serial);
     Serial.print("Initializing SD card...");
 
     if (!SD.begin(chipSelect))
