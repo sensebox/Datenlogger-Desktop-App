@@ -9,20 +9,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FileUp } from "lucide-react";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
-import { Device } from "@/types";
-import { useAuth } from "./auth-provider";
 import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
 import LoadingOverlay from "./ui/LoadingOverlay";
+import storage from "@/lib/local-storage";
 
 type UploadDialogProps = {
   filename: string;
@@ -38,89 +30,37 @@ export function UploadDialog({
   const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<Device>();
-  const [selectedDeviceSecrets, setSelectedDeviceSecrets] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const { signInResponse } = useAuth();
+  const [token, setToken] = useState<string>("");
 
   useEffect(() => {
-    const fetchDevices = async () => {
-      const response = await fetch(
-        "https://api.opensensemap.org/users/me/boxes",
-        {
-          headers: {
-            Authorization: `Bearer ${signInResponse?.token}`,
-          },
-        }
-      );
-      const devices = await response.json();
-      setDevices(devices.data.boxes);
-      setSelectedDevice(
-        devices.data.boxes.find((device: Device) => device._id === deviceId)
-      );
-    };
-
-    fetchDevices();
-  }, []);
-
-  const fetchDeviceSecrets = async (deviceId: string) => {
-    setLoading(true);
-    const response = await fetch(
-      `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${signInResponse?.token}`,
-        },
-      }
-    );
-    const answer = await response.json();
-    if (
-      answer.code === "BadRequest" ||
-      answer.code === "UnprocessableEntity" ||
-      answer.code === "Unauthorized" ||
-      answer.code === "Forbidden"
-    ) {
-      setOpen(false);
-      toast({
-        variant: "destructive",
-        title: answer.code,
-        description: answer.message,
-        duration: 5000,
-      });
-    } else {
-      setSelectedDeviceSecrets(answer.data);
-    }
-    setLoading(false);
-  };
+    if (storage.get(`accessToken_${deviceId}`) === undefined) return;
+    setToken(storage.get(`accessToken_${deviceId}`));
+  }, [deviceId]);
 
   const uploadFile = async (event: any) => {
     setLoading(true);
-    const csv = await readCSVFile(
-      `.reedu/data/${selectedDeviceSecrets.box._id}/${filename}`
-    );
-
+    const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
     const response = await fetch(
-      `https://api.opensensemap.org/boxes/${selectedDeviceSecrets.box._id}/data`,
+      `https://api.opensensemap.org/boxes/${deviceId}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: `${selectedDeviceSecrets?.box.access_token}`,
+          Authorization: `${token}`,
           "content-type": "text/csv",
         },
         body: csv,
       }
     );
     const answer = await response.json();
-    console.log(answer);
-
     // if answer code is anything but ok
 
     if (
       answer.code === "BadRequest" ||
       answer.code === "UnprocessableEntity" ||
       answer.code === "Unauthorized" ||
-      answer.code === "Forbidden"
+      answer.code === "Forbidden" ||
+      answer.code === "NotFound"
     ) {
       setOpen(false);
       toast({
@@ -133,11 +73,11 @@ export function UploadDialog({
       toast({
         title: answer,
         description: answer,
-        duration: 5000,
+        duration: 1000,
       });
       await invoke("insert_data", {
         filename: filename,
-        device: selectedDeviceSecrets.box._id,
+        device: deviceId,
         checksum: "",
       });
     }
@@ -146,17 +86,11 @@ export function UploadDialog({
     event.preventDefault();
   };
 
-  const onValueChange = (deviceId: string) => {
-    const device = devices.find((device) => device._id === deviceId);
-    setSelectedDevice(device);
-  };
-
   return (
     <Dialog
       open={open}
       onOpenChange={(e) => {
         setOpen(e);
-        fetchDeviceSecrets(deviceId);
       }}
     >
       <DialogTrigger asChild>
@@ -170,55 +104,22 @@ export function UploadDialog({
           <DialogTitle>Upload CSV</DialogTitle>
           <DialogDescription>
             {loading && <div> Loading ... </div>}
-            {selectedDeviceSecrets.box && (
-              <div className="flex flex-col">
-                Your uploading the file {filename} to the device {deviceId}.
-              </div>
-            )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {selectedDeviceSecrets.box && (
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold">
-                {selectedDeviceSecrets.box.name}
-              </span>
-              <span className="text-sm">
-                The id of this box is: {selectedDeviceSecrets.box._id}
-              </span>
-              <span className="text-sm">
-                The last measurement of this box was at:{" "}
-                {selectedDeviceSecrets.box.lastMeasurementAt}
-              </span>
-              Are you sure you want to upload the file to this device?
-            </div>
-          )}
           {loading && <div> Loading ... </div>}
-          {/* <Select
-            value={selectedDevice ? selectedDevice._id : ""}
-            onValueChange={onValueChange}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Device" />
-            </SelectTrigger>
-            <SelectContent>
-              {devices.length > 0 &&
-                devices.map((device) => {
-                  return (
-                    <SelectItem key={device._id} value={device._id}>
-                      {device.name} ({device._id})
-                    </SelectItem>
-                  );
-                })}
-            </SelectContent>
-          </Select> */}
+          <div className="flex flex-col">
+            Your uploading the file {filename} to the device {deviceId}.
+          </div>
         </div>
         <DialogFooter>
           <Button
-            disabled={selectedDeviceSecrets === undefined}
+            disabled={deviceId === undefined && token === undefined}
             onClick={uploadFile}
           >
-            Upload
+            {deviceId === undefined && token === undefined
+              ? "No token"
+              : "Upload"}
           </Button>
         </DialogFooter>
       </DialogContent>
