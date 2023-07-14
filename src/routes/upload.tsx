@@ -4,14 +4,15 @@ import { Separator } from "@/components/ui/separator";
 import { readDirectory } from "@/lib/fs";
 import { FileEntry } from "@tauri-apps/api/fs";
 import { B } from "@tauri-apps/api/fs-6ad2a328";
-import { ChevronsUpDown, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { invoke } from "@tauri-apps/api/tauri";
+import { useAuth } from "@/components/auth-provider";
 
 export default function Upload() {
   const [folders, setFolders] = useState<FileEntry[]>([]);
-
+  const { signInResponse } = useAuth();
   useEffect(() => {
     const readDir = async () => {
       const fileEntries = await readDirectory(".reedu/data", false);
@@ -46,12 +47,22 @@ export default function Upload() {
                 <h4 className="mb-4 text-sm font-medium leading-none">
                   Device folders
                 </h4>
-                {folders.map((folder, index) => (
-                  <div key={index} id={folder.name}>
-                    <Link to={`/upload/${folder.name}`}>{folder.name}</Link>
-                    <Separator className="my-2" />
-                  </div>
-                ))}
+                {folders.map((folder, index) => {
+                  if (signInResponse?.data.user.boxes.includes(folder.name)) {
+                    return (
+                      <div key={index} id={folder.name}>
+                        <Link to={`/upload/${folder.name}`}>{folder.name}</Link>
+                        <Separator className="my-2" />
+                      </div>
+                    );
+                  } else
+                    return (
+                      <div key={index} id={folder.name}>
+                        {folder.name} (not registered to this Account)
+                        <Separator className="my-2" />
+                      </div>
+                    );
+                })}
               </div>
             </ScrollArea>
             <div className="col-span-3">

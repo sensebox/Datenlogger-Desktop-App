@@ -97,41 +97,18 @@ pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, 
     };
     println!("Written bytes len = {}", written_bytes);
 
-    // Wait for data
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes > 0 {
-            break;
-        }
-        println!("No data");
-        std::thread::sleep(std::time::Duration::from_millis(2000));
-    }
-
-    // Read data
     let mut buffer = String::new();
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes == 0 {
-            println!("No more data");
-            break;
-        }
-        port.read_to_string(&mut buffer);
+    port.read_to_string(&mut buffer);
+    println!("result: {}", buffer);
+    // Check if the last 3 chars are "end"
+    if !buffer.ends_with("end") {
+        return Err("Übertragung fehlgeschlagen: Not ending with |end ".to_string());
     }
-
     let parts: Vec<&str> = buffer.trim().split('|').collect();
     if parts.len() < 3 {
-        panic!("Invalid response format");
+        return Err("Übertragung fehlgeschlagen: Not 3 parts".to_string());
     }
-
     let content = parts[1].to_string();
-
-    println!("result: {}", buffer);
 
     // Parse config.cfg string and serialize into SenseboxConfig
     let mut config: SenseboxConfig = SenseboxConfig::new();
@@ -291,40 +268,21 @@ pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
     println!("Written bytes len = {}", written_bytes);
 
     // Wait for data
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes > 0 {
-            break;
-        }
-        println!("No data");
-        std::thread::sleep(std::time::Duration::from_millis(2000));
-    }
 
     // Read data
     let mut buffer = String::new();
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes == 0 {
-            println!("No more data");
-            break;
-        }
-        port.read_to_string(&mut buffer);
+    port.read_to_string(&mut buffer);
+    println!("result: {}", buffer);
+    // Check if the last 3 chars are "end"
+    if !buffer.ends_with("end") {
+        return Err("Übertragung fehlgeschlagen: Not ending with |end ".to_string());
     }
-    // let mut buffer = String::new();
-    // port.read_to_string(&mut buffer);
-    // println!("result: {}", buffer);
-
     let parts: Vec<&str> = buffer.trim().split('|').collect();
-    if parts.len() < 3 {
-        panic!("Invalid response format");
+    // if parts has more than 2 parts then return the parts as a File struct
+    // if not return an error
+    if parts.len() != 3 {
+        return Err("Error: File has less than 3 parts".to_string());
     }
-
     let filename = parts[0].to_string();
     let content = parts[1].to_string();
     let md5hash = parts[2].to_string();
