@@ -1,7 +1,5 @@
-
-
-import { Link, NavLink } from "react-router-dom"
-import { cn } from "../lib/utils"
+import { Link, NavLink } from "react-router-dom";
+import { cn } from "../lib/utils";
 
 export function MainNav({
   className,
@@ -28,6 +26,14 @@ export function MainNav({
       >
         Upload
       </NavLink>
+      <NavLink
+        to="/arduino"
+        className={({ isActive, isPending }) =>
+          isPending ? "text-muted-foreground" : isActive ? "text-green-400" : ""
+        }
+      >
+        Arduino
+      </NavLink>
     </nav>
-  )
+  );
 }

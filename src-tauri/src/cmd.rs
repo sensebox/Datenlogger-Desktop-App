@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use crate::db;
 use crate::fileinfo::FileInfo;
 use crate::models::{NewPost, NewUpload, Post, Test, Upload};
@@ -9,8 +7,11 @@ use crate::serialports::SerialPorts;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use serialport::SerialPortType;
+use std::io::{self, Read};
 use std::process::Command;
+use std::time::Duration;
 use std::{env, path};
+use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt};
 use tauri::command;
 #[derive(Serialize, Deserialize)]
 pub struct File {
@@ -390,5 +391,30 @@ pub fn open_in_explorer() {
         println!("Mac OS");
     } else {
         println!("Other");
+    }
+}
+
+#[tauri::command]
+pub fn upload_to_usb(app_handle: tauri::AppHandle) {
+    // get a file from the project folder and save it to the
+    let mut file_path = env::current_dir()
+        .unwrap()
+        .join("src")
+        .join("assets")
+        .join("hello_world.ino.bin");
+
+    let mut file = std::fs::File::open(&file_path).unwrap();
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).unwrap();
+
+    // print buffer
+    println!("{:?}", buffer);
+}
+#[tauri::command]
+pub fn list_disks() {
+    let mut system = System::new_all();
+    system.refresh_all();
+    for disk in system.disks() {
+        println!("{:?}", disk);
     }
 }

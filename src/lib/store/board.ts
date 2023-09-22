@@ -1,4 +1,4 @@
-import { SenseboxConfig, SerialPort } from "@/types";
+import { SenseboxConfig, SerialPort } from "@/styles/types";
 import { create } from "zustand";
 
 interface BoardState {

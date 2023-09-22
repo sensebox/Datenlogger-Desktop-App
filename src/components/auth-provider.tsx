@@ -1,4 +1,4 @@
-import { SignInResponse } from "@/types";
+import { SignInResponse } from "@/styles/types";
 import { createContext, useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useToast } from "./ui/use-toast";

@@ -41,6 +41,8 @@ fn main() {
             cmd::get_data,
             cmd::insert_data,
             cmd::open_in_explorer,
+            cmd::upload_to_usb,
+            cmd::list_disks
         ])
         .run(context)
         .expect("error while running tauri application");

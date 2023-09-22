@@ -17,6 +17,7 @@ import Login from "./routes/login";
 
 import "./styles.css";
 import Folder from "./routes/folder";
+import Arduino from "./routes/Arduino";
 
 const router = createBrowserRouter([
   {
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
             element: <Folder />,
           },
         ],
+      },
+      {
+        path: "arduino",
+        element: <Arduino />,
       },
       {
         path: "*",

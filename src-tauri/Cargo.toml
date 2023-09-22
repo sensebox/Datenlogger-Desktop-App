@@ -23,6 +23,7 @@ diesel_migrations = { version = "2.0.0", features = ["sqlite"] }
 libsqlite3-sys = { version = "^0", features = ["bundled"] }
 rusb = "0.9"
 serialport = "4.2.0"
+sysinfo = "0.29.7"
 uuid = { version = "1.2.1", features = [ "v4", "fast-rng", "macro-diagnostics" ] }
 
 [features]

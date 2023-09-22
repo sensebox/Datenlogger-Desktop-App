@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { invoke } from "@tauri-apps/api/tauri";
-import { SenseboxConfig, SerialPort } from "@/types";
+import { SenseboxConfig, SerialPort } from "@/styles/types";
 import { useBoardStore } from "@/lib/store/board";
 import { createDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";

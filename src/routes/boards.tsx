@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBoardStore } from "@/lib/store/board";
-import { FileContent, FileInfo } from "@/types";
+import { FileContent, FileInfo } from "@/styles/types";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Bot, Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";

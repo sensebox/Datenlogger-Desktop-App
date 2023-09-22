@@ -2,7 +2,7 @@ import { DataTable } from "@/components/data-table";
 import { UploadDialog } from "@/components/upload-dialog";
 import { File, getColumns } from "@/lib/columns/files";
 import { readDirectory } from "@/lib/fs";
-import { Upload } from "@/types";
+import { Upload } from "@/styles/types";
 import { invoke } from "@tauri-apps/api";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
