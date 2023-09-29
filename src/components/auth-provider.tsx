@@ -49,7 +49,7 @@ export default function AuthProvider({ children }: ViewProps) {
   const { toast } = useToast();
 
   // Load SignInResponse from localStorage and set it on context
-  const auth = storage.get<SignInResponse | undefined>("auth");
+  const auth = storage.get<SignInResponse | undefined>("loginToken");
   const [token, setToken] = useState<SignInResponse | undefined>(auth);
 
   const handleLogin = async (username: string, password: string) => {
@@ -66,7 +66,7 @@ export default function AuthProvider({ children }: ViewProps) {
     }
 
     setToken(response);
-    storage.set("auth", response);
+    storage.set("loginToken", response);
 
     const origin = location.state?.from?.pathname || "/uploads";
     navigate(origin);
@@ -74,7 +74,7 @@ export default function AuthProvider({ children }: ViewProps) {
 
   const handleLogout = () => {
     setToken(undefined);
-    storage.remove("auth");
+    storage.remove("loginToken");
   };
 
   const value = {

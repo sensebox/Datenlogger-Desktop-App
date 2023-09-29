@@ -48,12 +48,12 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   async function connectAndReadConfig(serialPort: SerialPort) {
     try {
       setLoading(true);
-      const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
-        port: serialPort.port,
-        command: "<3 config>",
-      });
-      await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
-      setConfig(boardConfig);
+      // const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
+      //   port: serialPort.port,
+      //   command: "<3 config>",
+      // });
+      // await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
+      // setConfig(boardConfig);
       setSerialPort(serialPort);
       setLoading(false);
       // showToast(`Successfully opened board at:${serialPort.port} `, "success");

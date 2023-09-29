@@ -13,6 +13,8 @@ use std::time::Duration;
 use std::{env, path};
 use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt};
 use tauri::command;
+use tauri::utils::html::PatternObject;
+
 #[derive(Serialize, Deserialize)]
 pub struct File {
     pub filename: String,
@@ -410,6 +412,7 @@ pub fn upload_to_usb(app_handle: tauri::AppHandle) {
     // print buffer
     println!("{:?}", buffer);
 }
+
 #[tauri::command]
 pub fn list_disks() {
     let mut system = System::new_all();
@@ -417,4 +420,31 @@ pub fn list_disks() {
     for disk in system.disks() {
         println!("{:?}", disk);
     }
+}
+
+#[command]
+pub fn write_to_cfg(port: &str, data: &str) -> Result<String, String> {
+    let mut port = match serialport::new(port.to_string(), 115_200)
+        .timeout(Duration::from_millis(2000))
+        .open()
+    {
+        Ok(port) => port,
+        Err(error) => return Err(format!("Failed to open port: {}", error)),
+    };
+    println!("data: {}", data.to_string());
+
+    // Write data but wait
+    let written_bytes = match port.write(data.as_bytes()) {
+        Ok(bytes) => bytes,
+        Err(error) => return Err(format!("Write failed: {}", error)),
+    };
+    println!("Written bytes len = {}", written_bytes);
+
+    // Read data
+    let mut buffer = String::new();
+    port.read_to_string(&mut buffer);
+    println!("result: {}", buffer);
+    // Check if the last 3 chars are "end"
+
+    return Ok(buffer.to_string());
 }

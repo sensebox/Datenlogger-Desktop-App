@@ -42,7 +42,8 @@ fn main() {
             cmd::insert_data,
             cmd::open_in_explorer,
             cmd::upload_to_usb,
-            cmd::list_disks
+            cmd::list_disks,
+            cmd::write_to_cfg
         ])
         .run(context)
         .expect("error while running tauri application");

@@ -1,5 +1,4 @@
 import { LogOut, Settings, User } from "lucide-react";
-
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button, buttonVariants } from "./ui/button";
 import {
@@ -13,8 +12,30 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useAuth } from "./auth-provider";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import storage from "@/lib/local-storage";
+import useOpenSenseMapLogin from "@/lib/useOpenSenseMapLogin";
+
+interface LoginResponse {
+  // Definiere die Struktur der Login-Antwort hier
+  // Zum Beispiel:
+  code: number;
+  message: string;
+  token: string;
+  refreshToken: string;
+  data: {
+    user: {
+      name: string;
+      email: string;
+      role: string;
+      language: string;
+      emailIsConfirmed: boolean;
+      boxes: string[];
+    };
+  };
+}
 
 const getInitials = function (string: string) {
   if (!string) return "";
@@ -28,8 +49,34 @@ const getInitials = function (string: string) {
 };
 
 export function UserNav() {
-  const { signInResponse, onLogout } = useAuth();
+  const { logout, refreshToken } = useOpenSenseMapLogin();
+  const [signInResponse, setSignInReponse] = useState<LoginResponse>();
+  const param = useParams();
 
+  useEffect(() => {
+    setSignInReponse(storage.get("signInResponse"));
+  }, [param]);
+
+  useEffect(() => {
+    const refreshOldToken = async () => {
+      const timestamp: any = storage.get("timestamp");
+      // if an hour has passed, get new token using the refresh token 3600000
+      if (timestamp && Date.now() - timestamp > 3600000) {
+        console.log("refreshing token");
+        const oldtoken = storage.get("loginToken");
+        await refreshToken();
+        const newToken = storage.get("loginToken");
+        console.log("old token", oldtoken);
+        console.log("new token", newToken);
+      }
+    };
+    refreshOldToken();
+  });
+
+  const handleLogout = async () => {
+    await logout();
+    setSignInReponse(undefined);
+  };
   return (
     <>
       {signInResponse !== undefined ? (
@@ -70,7 +117,7 @@ export function UserNav() {
             {signInResponse !== null && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                   <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

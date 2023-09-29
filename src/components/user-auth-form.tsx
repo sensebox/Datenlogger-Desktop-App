@@ -5,14 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
-import { useAuth } from "./auth-provider";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import useOpenSenseMapLogin from "@/lib/useOpenSenseMapLogin";
+import { toast } from "./ui/use-toast";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const { onLogin } = useAuth();
-
+  const { login, logout } = useOpenSenseMapLogin();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const router = useNavigate();
+  const [placeholder, setPlaceholder] = React.useState<string>("");
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
@@ -24,13 +30,19 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const email = target.email.value; // typechecks!
     const password = target.password.value; // typechecks!
 
-    await onLogin(email, password);
+    await login(email, password);
 
     setTimeout(() => {
       setIsLoading(false);
     }, 3000);
-  }
 
+    const origin = location.state?.from?.pathname || "/uploads";
+    navigate(origin);
+    toast({
+      title: "Login erfolgreich",
+      description: "Du wurdest erfolgreich eingeloggt",
+    });
+  }
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <form onSubmit={onSubmit}>
