@@ -146,8 +146,8 @@ void executeCommand() {
       printFileContent(cmdMsg);
       break;
     case 3: {
-      String configFilename = findConfigFile();
-      printFileContent(configFilename.c_str());
+      char * configFilename = findConfigFile();
+      printFileContent(configFilename);
       break;
     }
     case 4:
@@ -231,7 +231,7 @@ SdFile getParentDir(const char *filepath, int *index) {
 
  void printAllFiles() {
   // Öffnen des Root-Verzeichnisses
-  File root = SD.open("/logs/");
+  File root = SD.open("/");
   if (!root) {
     Serial.println("Fehler beim Öffnen des Root-Verzeichnisses");
     return;
@@ -348,8 +348,10 @@ String getFileContent(File file) {
   Serial.println();
 }
 
- String findConfigFile() {
-  String configFilename = "";
+ char * findConfigFile() {
+
+  const char *confFileName;
+  char * buffer = (char * ) malloc(666);
   bool configFileFound = false;
   // Öffnen des Root-Verzeichnisses
   File root = SD.open("/");
@@ -372,17 +374,18 @@ String getFileContent(File file) {
     }
     else {
       // Ausgabe des Dateinamens im seriellen Monitor
-      String fileName = file.name();
-
-      // Skip special MacOS files
-      if(fileName.indexOf("~") > 0) {
-        continue;
-      }
-
-      if (fileName.endsWith(".cfg") || fileName.endsWith(".CFG")) {
-        configFilename = fileName;
+      String name = file.name();
+      char cname[50];
+      name.toLowerCase();
+      if (name.indexOf(".cfg") != -1)
+      { 
+        name.toCharArray(cname, 50);
+        confFileName = cname;
+        Serial.print("found ");
+        Serial.println(confFileName);
         break;
       }
+
     }
 
     // Schließen der Datei
@@ -390,7 +393,7 @@ String getFileContent(File file) {
   }
 
   // Schließen des Root-Verzeichnisses
-  root.close();
-
-  return configFilename;
+    root.close();
+  strcpy(buffer, confFileName);
+  return buffer;
 }
