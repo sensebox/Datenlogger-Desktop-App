@@ -1,6 +1,5 @@
 import * as React from "react";
-import { Check, ChevronsUpDown, ListRestartIcon } from "lucide-react";
-
+import { Check, ChevronsUpDown, ListRestartIcon, Cpu } from "lucide-react"; // Verwende ein Icon, das Geräte repräsentiert
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +40,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   );
   const { setConfig, setSerialPort } = useBoardStore();
   const [loading, setLoading] = React.useState(false);
+
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
   }
@@ -56,7 +56,6 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       setConfig(boardConfig);
       setSerialPort(serialPort);
       setLoading(false);
-      // showToast(`Successfully opened board at:${serialPort.port} `, "success");
     } catch (error: any) {
       setLoading(false);
       console.log(error);
@@ -84,19 +83,29 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
             size="sm"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select a team"
-            className={cn("w-[200px] justify-between", className)}
+            aria-label="Select a device"
+            className={cn(
+              "w-[250px] justify-between p-3 bg-white rounded-lg shadow-md",
+              className
+            )}
           >
-            {selectedBoard ? selectedBoard.port : "No board selected"}
-            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+            {selectedBoard ? (
+              <>
+                <Cpu className="mr-2 h-4 w-4 text-green-400" />
+                {selectedBoard.port} ({selectedBoard.product})
+              </>
+            ) : (
+              "No device selected"
+            )}
+            <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[250px] p-2 bg-white rounded-lg shadow-md">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Search boards..." />
-              <CommandEmpty>No board found.</CommandEmpty>
-              <CommandGroup key="boards" heading="Boards">
+              {/* <CommandInput placeholder="Search devices..." /> */}
+              <CommandEmpty>No device found.</CommandEmpty>
+              <CommandGroup key="devices" heading="Devices">
                 {serialPorts?.map((serialPort, idx) => (
                   <CommandItem
                     key={idx}
@@ -105,12 +114,15 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                       connectAndReadConfig(serialPort);
                       setOpen(false);
                     }}
-                    className="text-sm"
+                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
                   >
-                    {serialPort.port} ({serialPort.product})
+                    <Cpu className="h-4 w-4 text-blue-400" />
+                    <span className="flex-1 text-sm">
+                      {serialPort.port} ({serialPort.product})
+                    </span>
                     <Check
                       className={cn(
-                        "ml-auto h-4 w-4",
+                        "ml-auto h-4 w-4 text-green-400",
                         selectedBoard?.port === serialPort.port
                           ? "opacity-100"
                           : "opacity-0"
@@ -121,28 +133,25 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
               </CommandGroup>
             </CommandList>
             <CommandSeparator />
-            <CommandList>
+            {/* <CommandList>
               <CommandGroup>
                 <DialogTrigger asChild>
                   <CommandItem
                     onSelect={() => {
                       listSerialports();
                     }}
+                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
                   >
-                    <ListRestartIcon className="mr-2 h-5 w-5" />
-                    Refresh List
+                    <ListRestartIcon className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm">Refresh List</span>
                   </CommandItem>
                 </DialogTrigger>
               </CommandGroup>
-            </CommandList>
+            </CommandList> */}
           </Command>
         </PopoverContent>
       </Popover>
-      {loading ? (
-        <div>
-          <LoadingOverlay></LoadingOverlay>
-        </div>
-      ) : null}
+      {loading && <LoadingOverlay />}
     </Dialog>
   );
 }

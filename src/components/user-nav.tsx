@@ -83,8 +83,7 @@ export function UserNav() {
         <Link
           to="/login"
           className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "right-4 top-4 md:right-8 md:top-8"
+            "bg-white shadow-md rounded-lg px-4 py-2  transition-colors text-gray-700 hover:bg-gray-100"
           )}
         >
           Login
