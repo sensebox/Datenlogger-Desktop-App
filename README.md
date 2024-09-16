@@ -1,7 +1,21 @@
-# Tauri + React + Typescript
+# Connect App Desktop
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+Mit der Connect app kann eine senseBox mit dem PC verbunden werden. Über das Tool können Daten verwaltet und hochgeladen werden!
+![alt text](image.png)
 
-## Recommended IDE Setup
+## Starting the app in development
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+1. `npm install # yarn add`
+2. `npm run tauri dev # yarn tauri dev`
+
+## Building the app
+
+` npm run build`
+
+## Arduino
+
+Lade den Arduino Sketch in `arduino-connect/connect` auf eine senseBox. Danach:
+
+- Wähle Board im Dropdown aus (alle Seriellen Monitoren von Arduion o.ä. vorher schließen)
+- Drücke 'Get Files'
+- Alle `.csv` Dateien auf der SD-Karte können ausgelesen und runtergeladen werden.
