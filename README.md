@@ -20,10 +20,6 @@ Installer Dateien werden in [Releases](https://github.com/sensebox/connect-app-d
 
 Alternativ kann der Build Prozess mit `yarn tauri build` ausgeführt werden.
 
-## Building the app
-
-` npm run build`
-
 ## Arduino
 
 Lade den Arduino Sketch in `arduino-connect/connect` auf eine senseBox. Danach:
