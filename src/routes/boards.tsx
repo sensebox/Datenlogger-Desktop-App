@@ -4,25 +4,41 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBoardStore } from "@/lib/store/board";
 import { FileContent, FileInfo } from "@/types";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Bot, Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
+import {
+  Bot,
+  Cpu,
+  Delete,
+  Fingerprint,
+  RefreshCcw,
+  Save,
+  TrashIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { File, getColumns } from "@/lib/columns/files";
 import { useToast } from "@/components/ui/use-toast";
 import { readDirectory } from "@/lib/fs";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { useFileStore } from "@/lib/store/files";
 
 export default function Boards() {
   const { toast } = useToast();
 
-  const [data, setData] = useState<File[]>([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const { config, serialPort } = useBoardStore();
   const [disabledButtons, setDisabledButtons] = useState<boolean>(true);
+  const { files, setFiles } = useFileStore();
 
   useEffect(() => {
     serialPort ? setDisabledButtons(false) : setDisabledButtons(true);
   }, [serialPort]);
+
+  useEffect(() => {
+    if (files.length > 0) {
+      setData(files);
+    }
+  }, []);
 
   const columns = getColumns(
     [],
@@ -31,19 +47,12 @@ export default function Boards() {
         id: "actions",
         cell: ({ row }: any) => {
           return (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => getFileContent(row.original.filename)}
-              >
-                <Save className="mr-2 h-4 w-4 text-blue-500" /> Copy
+            <div className="flex justify-between">
+              <Button onClick={() => getFileContent(row.original.filename)}>
+                <Save className="mr-2 h-4 w-4 " /> Copy
               </Button>
-              <Button
-                variant="destructive"
-                disabled
-                onClick={() => console.log("tbd")}
-              >
-                <Delete className="mr-2 h-4 w-4 text-red-500" /> Delete
+              <Button variant="destructive" onClick={() => console.log("tbd")}>
+                <TrashIcon className="mr-2 h-4 w-4 " /> Delete
               </Button>
             </div>
           );
@@ -51,18 +60,6 @@ export default function Boards() {
       },
     ]
   );
-
-  const getAsyncFiles = async () => {
-    setLoading(true);
-
-    const files = await invoke("write_and_read_serialport", {
-      port: serialPort?.port,
-      baud_rate: 9600,
-      command: "<1 root>",
-    });
-
-    console.log(files);
-  };
 
   const syncFiles = async () => {
     setLoading(true);
@@ -80,6 +77,7 @@ export default function Boards() {
           port: serialPort?.port,
           command: "<1 root>",
         });
+        setFiles(files);
         const csvFiles = files.filter(
           (file) =>
             !file.filename.includes("~") && file.filename.endsWith(".CSV")
