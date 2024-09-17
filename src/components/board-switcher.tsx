@@ -68,6 +68,19 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     }
   }
 
+  async function readFromSerialPort(serialPort: SerialPort) {
+    try {
+      // Optional: Ersetze '/dev/ttyUSB0' mit deinem gewünschten seriellen Port, falls nötig.
+      const data = await invoke("write_and_read_serialport", {
+        port_name: serialPort.port,
+        command: "<3 config>",
+      });
+      console.log("Daten vom seriellen Port:", data);
+    } catch (error) {
+      console.error("Fehler beim Lesen des seriellen Ports:", error);
+    }
+  }
+
   return (
     <Dialog>
       <Popover

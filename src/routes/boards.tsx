@@ -6,7 +6,6 @@ import { FileContent, FileInfo } from "@/types";
 import { invoke } from "@tauri-apps/api/tauri";
 import { Bot, Cpu, Delete, Fingerprint, RefreshCcw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
-import crypto from "crypto";
 import { DataTable } from "@/components/data-table";
 import { File, getColumns } from "@/lib/columns/files";
 import { useToast } from "@/components/ui/use-toast";
@@ -23,7 +22,6 @@ export default function Boards() {
 
   useEffect(() => {
     serialPort ? setDisabledButtons(false) : setDisabledButtons(true);
-    return () => {};
   }, [serialPort]);
 
   const columns = getColumns(
@@ -33,12 +31,19 @@ export default function Boards() {
         id: "actions",
         cell: ({ row }: any) => {
           return (
-            <div className="flex gap-4">
-              <Button onClick={() => getFileContent(row.original.filename)}>
-                <Save className="mr-2 h-4 w-4" /> Copy
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => getFileContent(row.original.filename)}
+              >
+                <Save className="mr-2 h-4 w-4 text-blue-500" /> Copy
               </Button>
-              <Button disabled={true} onClick={() => console.log("tbd")}>
-                <Delete className="mr-2 h-4 w-4" /> Delete
+              <Button
+                variant="destructive"
+                disabled
+                onClick={() => console.log("tbd")}
+              >
+                <Delete className="mr-2 h-4 w-4 text-red-500" /> Delete
               </Button>
             </div>
           );
@@ -47,94 +52,83 @@ export default function Boards() {
     ]
   );
 
-  const syncFiles = async () => {
-    try {
-      setLoading(true);
+  const getAsyncFiles = async () => {
+    setLoading(true);
 
-      // Invoke rust function to get all CSV files from SD card
-      const files: FileInfo[] = await invoke("connect_list_files", {
-        port: serialPort?.port,
-        command: "<1 root>",
-      });
-      const csvFiles = files.filter(
-        (file) => !file.filename.includes("~") && file.filename.endsWith(".CSV")
-      );
+    const files = await invoke("write_and_read_serialport", {
+      port: serialPort?.port,
+      baud_rate: 9600,
+      command: "<1 root>",
+    });
 
-      const syncedFiles = await readDirectory(
-        `.reedu/data/${config?.sensebox_id}`
-      );
-
-      const data: File[] = csvFiles.map((file) => {
-        const fileIsSynced = syncedFiles.findIndex(
-          (syncedFile) => syncedFile.name === file.filename
-        );
-
-        return {
-          filename: file.filename,
-          size: file.size,
-          status: fileIsSynced >= 0 ? "synced" : "pending",
-          createdAt: "N/A",
-        };
-      });
-
-      setData(data);
-      setLoading(false);
-
-      toast({
-        variant: "default",
-        description: "Files synced succesfully",
-        duration: 3000,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        description: `Error syncing files, ${error.message}`,
-        duration: 3000,
-      });
-      setLoading(false);
-    }
+    console.log(files);
   };
 
-  const deleteFile = async (fileName: String) => {
-    try {
-      setLoading(true);
-      console.log("Deleting file from selected board with name: ", fileName);
+  const syncFiles = async () => {
+    setLoading(true);
 
-      const toDelete: String = await invoke("delete_file", {
-        port: serialPort?.port,
-        command: `<4 /logs/${fileName}>`,
-      });
+    // Polyfill für requestIdleCallback
+    const idleCallback =
+      window.requestIdleCallback ||
+      function (handler) {
+        return setTimeout(handler, 1);
+      };
 
-      if (toDelete === "Datei erfolfreich gelöscht.") {
-        const newData = data.filter((file) => file.filename !== fileName);
-        // setData(newData);
+    idleCallback(async () => {
+      try {
+        const files: FileInfo[] = await invoke("connect_list_files", {
+          port: serialPort?.port,
+          command: "<1 root>",
+        });
+        const csvFiles = files.filter(
+          (file) =>
+            !file.filename.includes("~") && file.filename.endsWith(".CSV")
+        );
+
+        const syncedFiles = await readDirectory(
+          `.reedu/data/${config?.sensebox_id}`
+        );
+
+        const data: File[] = csvFiles.map((file) => {
+          const fileIsSynced = syncedFiles.findIndex(
+            (syncedFile) => syncedFile.name === file.filename
+          );
+
+          return {
+            filename: file.filename,
+            size: file.size,
+            status: fileIsSynced >= 0 ? "synced" : "pending",
+            createdAt: "N/A",
+          };
+        });
+
+        setData(data);
+        setLoading(false);
+
+        toast({
+          variant: "default",
+          description: "Files synced successfully",
+          duration: 3000,
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          description: `Error syncing files, ${error.message}`,
+          duration: 3000,
+        });
+        setLoading(false);
       }
-      setLoading(false);
-      //   showToast(`Datei erfolgreich gelöscht`, "success");
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      //   showToast(`Error deleting files: ${error.message}`, "error");
-      setLoading(false);
-    }
+    });
   };
 
   const getFileContent = async (fileName: string) => {
     try {
-      console.log(
-        "Getting file content from selected board with name: ",
-        fileName
-      );
       setLoading(true);
       const fileContent: FileContent = await invoke("get_file_content", {
         port: serialPort?.port,
         command: `<2 /${fileName}>`,
       });
       saveDataToFile(fileContent.content, fileName);
-      // const hash = calculateMd5hash(fileContent.content);
-      // if (hash === fileContent.md5hash) {
-      // } else {
-      //   console.log("Hashes are not equal");
-      // }
       setLoading(false);
     } catch (error: any) {
       toast({
@@ -155,64 +149,63 @@ export default function Boards() {
       });
       toast({
         variant: "default",
-        description: `File saved sucessfully.`,
+        description: `File saved successfully.`,
         duration: 3000,
       });
-      console.log("Daten erfolgreich gespeichert.");
     } catch (error: any) {
       toast({
         variant: "destructive",
         description: `Error trying to save file on disk: ${error.message}`,
         duration: 3000,
       });
-      console.error("Fehler beim Speichern der Daten:", error);
     }
   };
 
   return (
-    <div className="container">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <div className="flex items-center space-x-2">
-            <Button disabled={disabledButtons} onClick={() => syncFiles()}>
-              <RefreshCcw className="mr-2 h-4 w-4" /> Get files
+    <div className="container mx-auto p-6 bg-white rounded-lg shadow-md">
+      <div className="flex-1 space-y-6">
+        <div className="grid gap-6 md:grid-cols-5 lg:grid-cols-5">
+          <Card className="bg-gray-50 shadow-lg md:col-span-4 lg:col-span-4">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">
+                Device Overview
+              </CardTitle>
+              <Cpu className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-blue-100 text-blue-500">
+                  <Fingerprint className="mr-1 h-4 w-4" />
+                  {config ? config.sensebox_id : "No device selected"}
+                </Badge>
+                {config && config.name && (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-100 text-green-500"
+                  >
+                    <Bot className="mr-1 h-4 w-4" />
+                    {config.name}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Button occupying 1/5 of the grid space */}
+          <div className="flex items-start justify-end md:col-span-1 lg:col-span-1">
+            <Button
+              disabled={disabledButtons}
+              onClick={() => syncFiles()}
+              className="w-full"
+            >
+              <RefreshCcw className="mr-2 h-4 w-4 text-white" /> Get Files
             </Button>
           </div>
         </div>
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="md:col-span-1 lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Device Overview
-                </CardTitle>
-                <Cpu className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Badge>
-                    <Fingerprint className="mr-1 h-3 w-3" />
-                    {config ? config.sensebox_id : "No device selected"}
-                  </Badge>
-                  {config && config.name ? (
-                    <Badge>
-                      <Bot className="mr-1 h-3 w-3" />
-                      {config.name}
-                    </Badge>
-                  ) : null}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <DataTable columns={columns} data={data} />
-        </div>
+
+        <DataTable columns={columns} data={data} />
       </div>
-      {loading ? (
-        <div>
-          <LoadingOverlay></LoadingOverlay>
-        </div>
-      ) : null}
+      {loading && <LoadingOverlay />}
     </div>
   );
 }

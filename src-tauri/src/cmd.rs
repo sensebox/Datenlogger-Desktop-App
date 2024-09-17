@@ -12,6 +12,9 @@ use serialport::SerialPortType;
 use std::process::Command;
 use std::{env, path};
 use tauri::command;
+use serial2_tokio::SerialPort;
+use tokio::time::{timeout, Duration as TokioDuration, Instant};
+
 #[derive(Serialize, Deserialize)]
 pub struct File {
     pub filename: String,
@@ -78,125 +81,105 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
     serial_ports.into()
 }
 
-#[command]
-pub fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, String> {
-    // Open port
-    let mut port = match serialport::new(port.to_string(), 115_200)
-        .timeout(Duration::from_millis(5000))
-        .open()
-    {
-        Ok(port) => port,
-        Err(error) => return Err(format!("Failed to open port: {}", error)),
-    };
 
-    // Write data
-    println!("Command: {}", command.to_string());
-    let written_bytes = match port.write(command.as_bytes()) {
-        Ok(bytes) => bytes,
-        Err(error) => return Err(format!("Write failed: {}", error)),
-    };
-    println!("Written bytes len = {}", written_bytes);
 
-    let mut buffer = String::new();
-    port.read_to_string(&mut buffer);
-    println!("result: {}", buffer);
-    // Check if the last 3 chars are "end"
-    if !buffer.ends_with("end") {
-        return Err("Übertragung fehlgeschlagen: Not ending with |end ".to_string());
+
+
+/// Öffnet den seriellen Port, sendet einen Befehl und liest die Antwort asynchron.
+/// Gibt die gesammelten Daten als String zurück.
+async fn send_command_and_read_response(port_name: &str, command: &str) -> Result<String, String> {
+    // Öffne den seriellen Port asynchron
+    let mut port = SerialPort::open(port_name, 9600).map_err(|e| {
+        eprintln!("Error opening serial port: {}", e);
+        e.to_string()
+    })?;
+    println!("Port opened");
+    // Schreibe den Befehl asynchron an den seriellen Port
+    println!("Command: {}", command);
+    port.write_all(command.as_bytes()).await.map_err(|e| {
+        eprintln!("Write failed: {}", e);
+        e.to_string()
+    })?;
+    println!("Command written");
+    // Asynchron lesen
+    let mut buffer = [0; 256];
+    let mut collected_data = String::new();
+    loop {
+        match port.read(&mut buffer).await {
+            Ok(bytes_read) => {
+                // Füge die gelesenen Daten dem gesammelten String hinzu
+                collected_data.push_str(&String::from_utf8_lossy(&buffer[..bytes_read]));
+                println!("Collected data: {}", collected_data);
+                // Prüfe, ob die Übertragung beendet ist
+                if collected_data.ends_with("end") {
+                    break;
+                }
+            }
+            Err(e) => {
+                eprintln!("Error reading from serial port: {}", e);
+                return Err(format!("Read failed: {}", e));
+            }
+        }
     }
-    let parts: Vec<&str> = buffer.trim().split('|').collect();
+    println!("Gesamte Antwort: {}", collected_data);
+    Ok(collected_data)
+}
+
+
+#[tauri::command]
+pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, String> {
+    // Öffne den seriellen Port asynchron
+    let collected_data = send_command_and_read_response(port, command).await?;
+
+    println!("Result: {}", collected_data);
+
+    // Teile den gelesenen String in Komponenten auf und überprüfe das Format
+    let parts: Vec<&str> = collected_data.trim().split('|').collect();
     if parts.len() < 3 {
         return Err("Übertragung fehlgeschlagen: Not 3 parts".to_string());
     }
     let content = parts[1].to_string();
 
-    // Parse config.cfg string and serialize into SenseboxConfig
-    let mut config: SenseboxConfig = SenseboxConfig::new();
+    // Parse config.cfg string und speichere es in SenseboxConfig
+    let mut config = SenseboxConfig::new();
     for line in content.lines() {
-        if !line.starts_with("#") && line.len() > 0 {
-            let parts: Vec<&str> = line.split("=").collect();
-            match parts[0] {
-                "NAME" => config.name = parts[1].to_string(),
-                "SENSEBOX_ID" => config.sensebox_id = parts[1].to_string(),
-                "DEVICE_ID" => config.sensebox_id = parts[1].to_string(),
-                "SSID" => config.ssid = parts[1].to_string(),
-                "PSK" => config.psk = parts[1].to_string(),
-                "TEMP_ID" => config.temp_id = parts[1].to_string(),
-                "TEMPERATUR_SENSORID" => config.temp_id = parts[1].to_string(),
-                "HUMI_ID" => config.humi_id = parts[1].to_string(),
-                "LUFTFEUCHTE_SENSORID" => config.humi_id = parts[1].to_string(),
-                "DIST_L_ID" => config.dist_l_id = parts[1].to_string(),
-                "DIST_R_ID" => config.dist_r_id = parts[1].to_string(),
-                "PM10_ID" => config.pm10_id = parts[1].to_string(),
-                "PM25_ID" => config.pm25_id = parts[1].to_string(),
-                "ACC_Y_ID" => config.acc_y_id = parts[1].to_string(),
-                "ACC_X_ID" => config.acc_x_id = parts[1].to_string(),
-                "ACC_Z_ID" => config.acc_z_id = parts[1].to_string(),
-                "SPEED_ID" => config.speed_id = parts[1].to_string(),
-                &_ => println!("Unknown config key: {}", parts[0]),
+        if !line.starts_with('#') && !line.is_empty() {
+            let parts: Vec<&str> = line.split('=').collect();
+            if parts.len() == 2 {
+                match parts[0] {
+                    "NAME" => config.name = parts[1].to_string(),
+                    "SENSEBOX_ID" => config.sensebox_id = parts[1].to_string(),
+                    "DEVICE_ID" => config.sensebox_id = parts[1].to_string(),
+                    "SSID" => config.ssid = parts[1].to_string(),
+                    "PSK" => config.psk = parts[1].to_string(),
+                    "TEMP_ID" | "TEMPERATUR_SENSORID" => config.temp_id = parts[1].to_string(),
+                    "HUMI_ID" | "LUFTFEUCHTE_SENSORID" => config.humi_id = parts[1].to_string(),
+                    "DIST_L_ID" => config.dist_l_id = parts[1].to_string(),
+                    "DIST_R_ID" => config.dist_r_id = parts[1].to_string(),
+                    "PM10_ID" => config.pm10_id = parts[1].to_string(),
+                    "PM25_ID" => config.pm25_id = parts[1].to_string(),
+                    "ACC_Y_ID" => config.acc_y_id = parts[1].to_string(),
+                    "ACC_X_ID" => config.acc_x_id = parts[1].to_string(),
+                    "ACC_Z_ID" => config.acc_z_id = parts[1].to_string(),
+                    "SPEED_ID" => config.speed_id = parts[1].to_string(),
+                    _ => println!("Unknown config key: {}", parts[0]),
+                }
             }
         }
     }
 
     Ok(config)
 }
-
 #[command]
-pub fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
+pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
     // Open port
-    println!("Port: {}", port.to_string());
-    let mut port = match serialport::new(port.to_string(), 115_200)
-        .timeout(Duration::from_millis(2000))
-        .open()
-    {
-        Ok(port) => port,
-        Err(error) => return Err(format!("Failed to open port: {}", error)),
-    };
 
-    // Write data
-    println!("Command: {}", command.to_string());
-    let written_bytes = match port.write(command.as_bytes()) {
-        Ok(bytes) => bytes,
-        Err(error) => return Err(format!("Write failed: {}", error)),
-    };
-    println!("Written bytes len = {}", written_bytes);
-    println!(
-        "Receiving data on {} at {} baud:",
-        "/dev/cu.usbmodem1101", 115_200
-    );
-
-    // Wait for data
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes > 0 {
-            break;
-        }
-        println!("No data");
-        std::thread::sleep(std::time::Duration::from_millis(2000));
-    }
-
-    // Read data
-    // let mut buffer = String::new();
-    // port.read_to_string(&mut buffer);
-    let mut buffer = String::new();
-    loop {
-        let available_bytes = match port.bytes_to_read() {
-            Ok(bytes) => bytes,
-            Err(error) => return Err(format!("Failed to read buffer size: {}", error)),
-        };
-        if available_bytes == 0 {
-            println!("No more data");
-            break;
-        }
-        port.read_to_string(&mut buffer);
-    }
+    let collected_data = send_command_and_read_response(port, command).await?;
+    println!("{}","Collected data");
 
     // Parse config.cfg string and serialize into SenseboxConfig
     let mut files: Vec<FileInfo> = Vec::new();
-    for line in buffer.lines() {
+    for line in collected_data.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() == 2 {
             files.push(FileInfo {
@@ -250,34 +233,12 @@ pub fn delete_file(port: &str, command: &str) -> Result<String, String> {
 }
 
 #[command]
-pub fn get_file_content(port: &str, command: &str) -> Result<File, String> {
-    let mut port = match serialport::new(port.to_string(), 115_200)
-        .timeout(Duration::from_millis(2000))
-        .open()
-    {
-        Ok(port) => port,
-        Err(error) => return Err(format!("Failed to open port: {}", error)),
-    };
+pub async fn get_file_content(port: &str, command: &str) -> Result<File, String> {
 
-    // Write data
-    println!("Command: {}", command.to_string());
-    let written_bytes = match port.write(command.as_bytes()) {
-        Ok(bytes) => bytes,
-        Err(error) => return Err(format!("Write failed: {}", error)),
-    };
-    println!("Written bytes len = {}", written_bytes);
-
-    // Wait for data
-
+    let collected_data = send_command_and_read_response(port, command).await?;
     // Read data
-    let mut buffer = String::new();
-    port.read_to_string(&mut buffer);
-    println!("result: {}", buffer);
-    // Check if the last 3 chars are "end"
-    if !buffer.ends_with("end") {
-        return Err("Übertragung fehlgeschlagen: Not ending with |end ".to_string());
-    }
-    let parts: Vec<&str> = buffer.trim().split('|').collect();
+
+    let parts: Vec<&str> = collected_data.trim().split('|').collect();
     // if parts has more than 2 parts then return the parts as a File struct
     // if not return an error
     if parts.len() != 3 {

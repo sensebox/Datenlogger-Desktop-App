@@ -227,7 +227,8 @@ SdFile getParentDir(const char *filepath, int *index) {
     // do the interactive search
     SdFile parentdir = getParentDir("/", &pathidx);
     parentdir.ls(LS_SIZE);
- }
+    Serial.write("|");
+    Serial.write("end"); }
 
  void printAllFiles() {
   // Öffnen des Root-Verzeichnisses
