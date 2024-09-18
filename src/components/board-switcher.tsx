@@ -5,6 +5,7 @@ import {
   ChevronsDown,
   ChevronsUpDown,
   Cpu,
+  FolderIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { invoke } from "@tauri-apps/api/tauri";
-import { FileStats, SenseboxConfig, SerialPort } from "@/types";
+import { FileStats, SenseboxConfig, SerialPort, Upload } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
-import { createDirectory } from "@/lib/fs";
+import { createDirectory, readDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import { useToast } from "./ui/use-toast";
 import { useFileStore } from "@/lib/store/files";
@@ -48,9 +49,14 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   const { files, setFiles } = useFileStore();
   const [loading, setLoading] = React.useState(false);
 
+  const [folders, setFolders] = React.useState<any[]>([]);
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
   }
+
+  React.useEffect(() => {
+    readDir();
+  }, []);
 
   async function connectAndReadConfig(serialPort: SerialPort) {
     try {
@@ -84,6 +90,26 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       });
     }
   }
+
+  const readDir = async () => {
+    const files = await readDirectory(`.reedu/data/`);
+    const mappedFiles: File[] = [];
+    // exclude all hidden folders
+    const filteredFiles = files.filter((file) => !file.name.startsWith("."));
+
+    // for (let index = 0; index < files.length; index++) {
+    //   const element = files[index];
+    //   const fileIsUploaded = uploadedFiles.findIndex(
+    //     (uploadedFile) => uploadedFile.filename === element.name
+    //   );
+    //   mappedFiles.push({
+    //     filename: element.name || "no name",
+    //     size: "",
+    //     status: fileIsUploaded >= 0 ? "uploaded" : "pending",
+    //   });
+    // }
+    setFolders(filteredFiles);
+  };
 
   return (
     <Dialog>
@@ -157,6 +183,22 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
               </CommandGroup>
             </CommandList>
             <CommandSeparator />
+            <CommandList>
+              <CommandGroup key="folders" heading="Folders">
+                {folders.map((folder, idx) => (
+                  <CommandItem
+                    key={idx}
+                    onSelect={() => {
+                      console.log(folder);
+                    }}
+                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <FolderIcon className="h-4 w-4 text-blue-400" />
+                    <span className="flex-1 text-sm">{folder.name}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
           </Command>
         </PopoverContent>
       </Popover>

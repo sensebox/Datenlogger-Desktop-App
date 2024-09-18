@@ -96,7 +96,6 @@ export default function SDCardOverview() {
         createdAt: "N/A",
       };
     });
-    console.log(tmpData);
 
     setData(tmpData);
   };
