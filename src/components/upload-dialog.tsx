@@ -94,14 +94,14 @@ export function UploadDialog({
       setOpen(false);
       toast({
         variant: "destructive",
-        title: answer.code,
-        description: answer.message,
+        description:
+          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
         duration: 5000,
       });
     } else {
       toast({
-        title: "Upload Successful",
-        description: "Your file has been uploaded successfully.",
+        variant: "success",
+        description: "Die Datei wurde erfolgreich hochgeladen",
         duration: 1000,
       });
       await invoke("insert_data", {

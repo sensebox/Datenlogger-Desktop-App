@@ -42,7 +42,7 @@ export function UploadAllDialog({
   const [loading, setLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
   const [data, setData] = useState<FileStats[]>(files);
-
+  const [uploadCount, setUploadCount] = useState<number>(0);
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
@@ -73,25 +73,41 @@ export function UploadAllDialog({
   }, []);
 
   const initiateUploadAll = async () => {
-    // log something here for me to see
     try {
-      const uploadPromises = data.map((file) => uploadFile(file.filename));
-      await Promise.all(uploadPromises);
+      setLoading(true);
+      setUploadCount(0);
+
+      for (let i = 0; i < data.length; i++) {
+        // Starte den Upload und den Timer gleichzeitig
+        await Promise.all([
+          uploadFile(data[i].filename), // Upload der Datei
+          new Promise((resolve) => setTimeout(resolve, 1000)), // Mindestwartezeit von 1 Sekunde
+        ]);
+
+        setUploadCount((prev) => prev + 1); // Aktualisieren des Fortschritts
+      }
+
+      setLoading(false);
       setOpen(false);
+      toast({
+        variant: "success",
+        description: "Die Dateien wurden erfolgreich hochgeladen.",
+        duration: 1000,
+      });
     } catch (error) {
       console.error(error);
+      setLoading(false);
       setOpen(false);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: "An error occurred while uploading the files:" + error,
+        description: "An error occurred while uploading the files: " + error,
         duration: 5000,
       });
     }
   };
 
   const uploadFile = async (filename: any) => {
-    setLoading(true);
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
     const response = await fetch(
       `https://api.opensensemap.org/boxes/${deviceId}/data`,
@@ -116,23 +132,17 @@ export function UploadAllDialog({
       setOpen(false);
       toast({
         variant: "destructive",
-        title: answer.code,
-        description: answer.message,
+        description:
+          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
         duration: 5000,
       });
     } else {
-      toast({
-        title: "Upload Successful",
-        description: "Your file has been uploaded successfully.",
-        duration: 1000,
-      });
       await invoke("insert_data", {
         filename: filename,
         device: deviceId,
         checksum: "",
       });
     }
-    setLoading(false);
   };
 
   return (
@@ -164,7 +174,15 @@ export function UploadAllDialog({
         <div className="grid gap-4 py-4">
           {loading ? (
             <div className="flex justify-center items-center text-blue-500">
-              Loading...
+              <p>
+                {uploadCount}/{data.length} Dateien...
+              </p>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-all"
+                  style={{ width: `${(uploadCount / data.length) * 100}%` }}
+                ></div>
+              </div>
             </div>
           ) : (
             <Carousel
@@ -201,7 +219,6 @@ export function UploadAllDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-      {loading && <LoadingOverlay />}
     </Dialog>
   );
 }
