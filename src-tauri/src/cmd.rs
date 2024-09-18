@@ -93,14 +93,12 @@ async fn send_command_and_read_response(port_name: &str, command: &str) -> Resul
         eprintln!("Error opening serial port: {}", e);
         e.to_string()
     })?;
-    println!("Port opened");
     // Schreibe den Befehl asynchron an den seriellen Port
     println!("Command: {}", command);
     port.write_all(command.as_bytes()).await.map_err(|e| {
         eprintln!("Write failed: {}", e);
         e.to_string()
     })?;
-    println!("Command written");
     // Asynchron lesen
     let mut buffer = [0; 256];
     let mut collected_data = String::new();
@@ -121,7 +119,6 @@ async fn send_command_and_read_response(port_name: &str, command: &str) -> Resul
             }
         }
     }
-    println!("Gesamte Antwort: {}", collected_data);
     Ok(collected_data)
 }
 
@@ -182,6 +179,11 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
     for line in collected_data.lines() {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() == 2 {
+            let filename = parts[0].to_string();
+            // if filename ends with .CFG then skip
+            if filename.ends_with(".CFG") {
+                continue;
+            }
             files.push(FileInfo {
                 filename: parts[0].to_string(),
                 size: parts[1].to_string(),

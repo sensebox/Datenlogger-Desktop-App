@@ -67,9 +67,14 @@ type Upload = {
   uploaded_at: Date;
 };
 
-type FileInfo = {
-  filename: string;
-  size: string;
+type FileStats = {
+  filename?: string;
+  deviceId?: string;
+  size?: number;
+  lines?: number;
+  firstDate?: string;
+  lastDate?: string;
+  status?: string;
 };
 
 export {
@@ -81,5 +86,5 @@ export {
   SignInData,
   SignInResponse,
   Upload,
-  FileInfo,
+  FileStats,
 };

@@ -1,12 +1,17 @@
 import * as React from "react";
-import { Check, ChevronsUpDown, ListRestartIcon, Cpu } from "lucide-react"; // Verwende ein Icon, das Geräte repräsentiert
+import {
+  Check,
+  ChevronDown,
+  ChevronsDown,
+  ChevronsUpDown,
+  Cpu,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -68,19 +73,6 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     }
   }
 
-  async function readFromSerialPort(serialPort: SerialPort) {
-    try {
-      // Optional: Ersetze '/dev/ttyUSB0' mit deinem gewünschten seriellen Port, falls nötig.
-      const data = await invoke("write_and_read_serialport", {
-        port_name: serialPort.port,
-        command: "<3 config>",
-      });
-      console.log("Daten vom seriellen Port:", data);
-    } catch (error) {
-      console.error("Fehler beim Lesen des seriellen Ports:", error);
-    }
-  }
-
   return (
     <Dialog>
       <Popover
@@ -98,25 +90,32 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
             aria-expanded={open}
             aria-label="Select a device"
             className={cn(
-              "w-[250px] justify-between p-3 bg-white rounded-lg shadow-md",
+              "w-[300px] justify-between p-3 bg-white rounded-lg shadow-md transition-colors",
+              selectedBoard
+                ? "border border-green-500"
+                : "border border-gray-300",
               className
             )}
           >
             {selectedBoard ? (
               <>
                 <Cpu className="mr-2 h-4 w-4 text-green-400" />
-                {selectedBoard.port} ({selectedBoard.product})
+                <span className="flex gap-4 text-green-600">
+                  {selectedBoard.port} ({selectedBoard.product}){" "}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                </span>
               </>
             ) : (
-              "No device selected"
+              <span className="flex gap-4 text-gray-500">
+                No device selected{" "}
+                <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+              </span>
             )}
-            <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[250px] p-2 bg-white rounded-lg shadow-md">
           <Command>
             <CommandList>
-              {/* <CommandInput placeholder="Search devices..." /> */}
               <CommandEmpty>No device found.</CommandEmpty>
               <CommandGroup key="devices" heading="Devices">
                 {serialPorts?.map((serialPort, idx) => (
@@ -127,40 +126,25 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                       connectAndReadConfig(serialPort);
                       setOpen(false);
                     }}
-                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
+                    className={cn(
+                      "flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer",
+                      selectedBoard?.port === serialPort.port
+                        ? "bg-green-100"
+                        : ""
+                    )}
                   >
                     <Cpu className="h-4 w-4 text-blue-400" />
                     <span className="flex-1 text-sm">
                       {serialPort.port} ({serialPort.product})
                     </span>
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4 text-green-400",
-                        selectedBoard?.port === serialPort.port
-                          ? "opacity-100"
-                          : "opacity-0"
-                      )}
-                    />
+                    {selectedBoard?.port === serialPort.port && (
+                      <Check className="ml-auto h-4 w-4 text-green-400" />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
             </CommandList>
             <CommandSeparator />
-            {/* <CommandList>
-              <CommandGroup>
-                <DialogTrigger asChild>
-                  <CommandItem
-                    onSelect={() => {
-                      listSerialports();
-                    }}
-                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
-                  >
-                    <ListRestartIcon className="h-5 w-5 text-gray-500" />
-                    <span className="text-sm">Refresh List</span>
-                  </CommandItem>
-                </DialogTrigger>
-              </CommandGroup>
-            </CommandList> */}
           </Command>
         </PopoverContent>
       </Popover>
