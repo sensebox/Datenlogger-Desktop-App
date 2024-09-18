@@ -23,11 +23,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { invoke } from "@tauri-apps/api/tauri";
-import { SenseboxConfig, SerialPort } from "@/types";
+import { FileStats, SenseboxConfig, SerialPort } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
 import { createDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import { useToast } from "./ui/use-toast";
+import { useFileStore } from "@/lib/store/files";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -44,6 +45,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     null
   );
   const { setConfig, setSerialPort } = useBoardStore();
+  const { files, setFiles } = useFileStore();
   const [loading, setLoading] = React.useState(false);
 
   async function listSerialports() {
@@ -58,6 +60,16 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
         command: "<3 config>",
       });
       await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
+      const files: FileStats[] = await invoke("connect_list_files", {
+        port: serialPort?.port,
+        command: "<1 root>",
+      });
+      setFiles(files);
+      toast({
+        variant: "success",
+        description: "Verbindung erfolgreich hergestellt.",
+        duration: 5000,
+      });
       setConfig(boardConfig);
       setSerialPort(serialPort);
       setLoading(false);

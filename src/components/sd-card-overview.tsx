@@ -37,6 +37,8 @@ import { UploadAllDialog } from "./upload-all-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useAuth } from "./auth-provider";
 import { UserNav } from "./user-nav";
+import { FileTable } from "./sd-card-table";
+import { SDCardTableButtonBar } from "./sd-card-table-button-bar";
 
 type Device = {
   name: string;
@@ -55,10 +57,6 @@ export default function SDCardOverview() {
       setData(files);
     }
   }, [files]);
-
-  useEffect(() => {
-    console.log(signInResponse);
-  }, []);
 
   const checkFilesUploaded = async (files: any[]) => {
     const syncedFiles = await readDirectory(
@@ -90,8 +88,8 @@ export default function SDCardOverview() {
       checkFilesUploaded(files);
 
       toast({
-        variant: "default",
-        description: "Files synced successfully",
+        variant: "success",
+        description: "Verbindung erfolgreich hergestellt.",
         duration: 3000,
       });
     } catch (error: any) {
@@ -128,11 +126,6 @@ export default function SDCardOverview() {
         deviceFolder: config?.sensebox_id,
         filePath: filePath,
       });
-      toast({
-        variant: "default",
-        description: `File saved successfully.`,
-        duration: 3000,
-      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -163,8 +156,8 @@ export default function SDCardOverview() {
       }
       checkFilesUploaded(files);
       toast({
-        variant: "default",
-        description: `All files downloaded successfully.`,
+        variant: "success",
+        description: `Alle Daten erfolgreicher auf dem Computer gespeichert.`,
         duration: 3000,
       });
     } catch (error: any) {
@@ -175,6 +168,8 @@ export default function SDCardOverview() {
       });
     }
   };
+
+  const deleteAllFiles = async () => {};
 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-white  rounded-lg overflow-hidden">
@@ -207,121 +202,21 @@ export default function SDCardOverview() {
               </p>
               <BoardSwitcher />
             </div>
-
-            <div className="flex flex-col gap-2">
-              <Button
-                onClick={() => downloadAllFiles()}
-                disabled={data.length === 0}
-                className="mt-4 bg-blue-500"
-              >
-                <DownloadIcon className="mr-2 h-4 w-4  text-white" />
-                Alle Daten runterladen
-              </Button>
-              <UploadAllDialog
-                disabled={data.length === 0}
-                files={data}
-                deviceId={config?.sensebox_id}
-              />
-              <Button
-                onClick={() => console.log("deleting everything")}
-                disabled={data.length === 0}
-                variant={"destructive"}
-              >
-                <Trash className="mr-2 h-4 w-4  text-white" />
-                Alle Daten löschen
-              </Button>
-            </div>
+            <SDCardTableButtonBar
+              data={data}
+              config={config}
+              downloadAllFiles={downloadAllFiles}
+              deleteAllFiles={deleteAllFiles}
+            />
           </div>
         </div>
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-green-50">
-              <TableHead className="text-green-800">Datei</TableHead>
-              <TableHead className="text-green-800">Größe</TableHead>
-              <TableHead className="text-green-800">Status</TableHead>
-              <TableHead className="text-green-800">Aktionen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.length === 0 && config?.name && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  <Button
-                    onClick={() => syncFiles()}
-                    className="mt-4 bg-green-500"
-                  >
-                    <DownloadIcon className="mr-2 h-4 w-4  text-white" /> Daten
-                    abfragen
-                  </Button>
-                </TableCell>
-              </TableRow>
-            )}
-            {data.length === 0 && !config?.name && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center">
-                  <p className="text-gray-600">
-                    Bitte wähle einen Port aus um das Gerät zu finden.
-                  </p>
-                </TableCell>
-              </TableRow>
-            )}
-            {data.map((file, index) => (
-              <TableRow
-                key={index}
-                className="hover:bg-gray-80 transition-colors"
-              >
-                <TableCell className="flex items-center gap-4">
-                  <FileText className="w-5 h-5 text-green-500" />
-                  <span className="font-medium ">{file.filename}</span>
-                </TableCell>
-                <TableCell className="text-gray-600">{file.size} KB</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={file ? "default" : "secondary"}
-                    className={`flex items-center gap-1 ${
-                      file.status === "synced"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {file.status === "synced" ? (
-                      <DownloadIcon className="w-4 h-4" />
-                    ) : (
-                      <Upload className="w-4 h-4" />
-                    )}
-                    {file.status === "synced" ? "Runtergeladen" : "Ausstehend"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      onClick={() => downloadFile(file.filename ?? "")}
-                      disabled={file.status === "synced"}
-                      size="sm"
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
-                    >
-                      <DownloadIcon className="w-4 h-4" />
-                    </Button>
-                    <UploadDialog
-                      filename={file.filename ?? ""}
-                      deviceId={config?.sensebox_id || ""}
-                      disabled={file.status != "synced"}
-                    />
-
-                    <Button
-                      onClick={() => deleteFile(file.filename ?? "")}
-                      variant="destructive"
-                      size="sm"
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>{" "}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <FileTable
+          data={data}
+          config={config}
+          syncFiles={syncFiles}
+          downloadFile={downloadFile}
+          deleteFile={deleteFile}
+        />
       </CardContent>
     </Card>
   );
