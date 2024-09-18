@@ -25,6 +25,7 @@ import {
 import { FileOverview } from "./ui/file-overview";
 import { FileStats } from "@/types";
 import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
+import { useAuth } from "./auth-provider";
 
 export function UploadAllDialog({
   deviceId,
@@ -36,7 +37,7 @@ export function UploadAllDialog({
   disabled: boolean;
 }) {
   const { toast } = useToast();
-
+  const { signInResponse } = useAuth();
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
@@ -143,7 +144,7 @@ export function UploadAllDialog({
     >
       <DialogTrigger asChild>
         <Button
-          disabled={disabled}
+          disabled={!signInResponse || disabled}
           className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
         >
           <UploadCloud className="w-4 h-4 mr-2" />

@@ -17,6 +17,7 @@ import LoadingOverlay from "./ui/LoadingOverlay";
 import storage from "@/lib/local-storage";
 import { FileOverview } from "./ui/file-overview";
 import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
+import { useAuth } from "./auth-provider";
 
 type UploadDialogProps = {
   filename: string;
@@ -40,6 +41,7 @@ export function UploadDialog({
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
+  const { signInResponse } = useAuth();
   const [file, setFile] = useState<FileStats>({
     firstDate: "",
     lastDate: "",
@@ -124,7 +126,7 @@ export function UploadDialog({
         <Button
           size="sm"
           className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
-          disabled={disabled}
+          disabled={!signInResponse || disabled}
         >
           <UploadCloud className="w-4 h-4 mr-2" />
           Upload

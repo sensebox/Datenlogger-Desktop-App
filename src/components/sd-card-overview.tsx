@@ -22,6 +22,7 @@ import {
   CloudIcon,
   TrashIcon,
   Trash,
+  UserIcon,
 } from "lucide-react";
 import { useBoardStore } from "@/lib/store/board";
 import { useFileStore } from "@/lib/store/files";
@@ -33,6 +34,9 @@ import { toast } from "./ui/use-toast";
 import BoardSwitcher from "./board-switcher";
 import { UploadDialog } from "./upload-dialog";
 import { UploadAllDialog } from "./upload-all-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useAuth } from "./auth-provider";
+import { UserNav } from "./user-nav";
 
 type Device = {
   name: string;
@@ -42,17 +46,19 @@ type Device = {
 export default function SDCardOverview() {
   const { config, serialPort } = useBoardStore();
   const { files, setFiles } = useFileStore();
+  const { signInResponse } = useAuth();
   const [data, setData] = useState<FileStats[]>(files);
 
   useEffect(() => {
     if (files.length > 0) {
       checkFilesUploaded(files);
+      setData(files);
     }
   }, [files]);
 
   useEffect(() => {
-    setData(files);
-  }, [files]);
+    console.log(signInResponse);
+  }, []);
 
   const checkFilesUploaded = async (files: any[]) => {
     const syncedFiles = await readDirectory(
@@ -179,6 +185,9 @@ export default function SDCardOverview() {
               <Smartphone className="w-5 h-5" />
               Geräteinformationen
             </h2>
+            <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm border-blue-100 border-solid border-2  ">
+              <UserNav />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

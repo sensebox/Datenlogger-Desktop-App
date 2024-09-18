@@ -1,17 +1,19 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom"; // Importiere useNavigate
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Icons } from "@/components/icons"; // Verwende Icons hier
+import { Icons } from "@/components/icons";
 import { useAuth } from "./auth-provider";
-import { LockIcon, MailIcon } from "lucide-react";
+import { LockIcon, MailIcon, ArrowLeft } from "lucide-react"; // Importiere ArrowLeft
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { onLogin } = useAuth();
+  const navigate = useNavigate(); // Verwende useNavigate für die Navigation
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -21,8 +23,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       email: { value: string };
       password: { value: string };
     };
-    const email = target.email.value; // typechecks!
-    const password = target.password.value; // typechecks!
+    const email = target.email.value;
+    const password = target.password.value;
 
     await onLogin(email, password);
 
@@ -36,6 +38,16 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       className={cn("grid gap-6 p-4 rounded-lg shadow-md bg-white", className)}
       {...props}
     >
+      {/* Zurück-Button */}
+      <Button
+        variant="ghost"
+        onClick={() => navigate(-1)} // Geht zur vorherigen Seite zurück
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        Zurück
+      </Button>
+
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-2">
           <div className="flex items-center space-x-2 border-b pb-2">
