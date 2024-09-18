@@ -71,67 +71,68 @@ export function UploadAllDialog({
     getFileStats();
   }, []);
 
-  // useEffect(() => {
-  //   // Simulate reading file stats (line count, first date)
-  //   const getFileStats = async () => {
-  //     const csvContent = await readCSVFile(
-  //       `.reedu/data/${deviceId}/${filename}`
-  //     );
-  //     const lines = csvContent.split("\n").length;
-  //     const { firstDate, lastDate } = extractDatesFromCSV(csvContent);
+  const initiateUploadAll = async () => {
+    // log something here for me to see
+    try {
+      const uploadPromises = data.map((file) => uploadFile(file.filename));
+      await Promise.all(uploadPromises);
+      setOpen(false);
+    } catch (error) {
+      console.error(error);
+      setOpen(false);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: "An error occurred while uploading the files:" + error,
+        duration: 5000,
+      });
+    }
+  };
 
-  //     setFileStats({ lines, firstDate, lastDate });
-  //   };
+  const uploadFile = async (filename: any) => {
+    setLoading(true);
+    const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
+    const response = await fetch(
+      `https://api.opensensemap.org/boxes/${deviceId}/data`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `${token}`,
+          "content-type": "text/csv",
+        },
+        body: csv,
+      }
+    );
+    const answer = await response.json();
 
-  //   if (open) getFileStats();
-  // }, [open, deviceId, filename]);
-
-  // const uploadFile = async (event: any) => {
-  //   setLoading(true);
-  //   const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
-  //   const response = await fetch(
-  //     `https://api.opensensemap.org/boxes/${deviceId}/data`,
-  //     {
-  //       method: "POST",
-  //       headers: {
-  //         Authorization: `${token}`,
-  //         "content-type": "text/csv",
-  //       },
-  //       body: csv,
-  //     }
-  //   );
-  //   const answer = await response.json();
-
-  //   if (
-  //     answer.code === "BadRequest" ||
-  //     answer.code === "UnprocessableEntity" ||
-  //     answer.code === "Unauthorized" ||
-  //     answer.code === "Forbidden" ||
-  //     answer.code === "NotFound"
-  //   ) {
-  //     setOpen(false);
-  //     toast({
-  //       variant: "destructive",
-  //       title: answer.code,
-  //       description: answer.message,
-  //       duration: 5000,
-  //     });
-  //   } else {
-  //     toast({
-  //       title: "Upload Successful",
-  //       description: "Your file has been uploaded successfully.",
-  //       duration: 1000,
-  //     });
-  //     await invoke("insert_data", {
-  //       filename: filename,
-  //       device: deviceId,
-  //       checksum: "",
-  //     });
-  //   }
-  //   setLoading(false);
-  //   setCounter((counter: number) => counter + 1);
-  //   event.preventDefault();
-  // };
+    if (
+      answer.code === "BadRequest" ||
+      answer.code === "UnprocessableEntity" ||
+      answer.code === "Unauthorized" ||
+      answer.code === "Forbidden" ||
+      answer.code === "NotFound"
+    ) {
+      setOpen(false);
+      toast({
+        variant: "destructive",
+        title: answer.code,
+        description: answer.message,
+        duration: 5000,
+      });
+    } else {
+      toast({
+        title: "Upload Successful",
+        description: "Your file has been uploaded successfully.",
+        duration: 1000,
+      });
+      await invoke("insert_data", {
+        filename: filename,
+        device: deviceId,
+        checksum: "",
+      });
+    }
+    setLoading(false);
+  };
 
   return (
     <Dialog
@@ -192,7 +193,7 @@ export function UploadAllDialog({
           </Button>
           <Button
             disabled={!deviceId || !token || loading}
-            onClick={() => console.log()}
+            onClick={() => initiateUploadAll()}
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-md transition-colors"
           >
             {loading ? "Uploading..." : "Upload"}
