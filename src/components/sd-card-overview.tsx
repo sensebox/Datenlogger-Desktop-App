@@ -63,18 +63,41 @@ export default function SDCardOverview() {
       `.reedu/data/${config?.sensebox_id}`
     );
 
+    const uploadedFiles: any = await invoke("get_data", {
+      device: config?.sensebox_id,
+    });
     const tmpData: any[] = files.map((file) => {
       const fileIsSynced = syncedFiles.findIndex(
         (syncedFile) => syncedFile.name === file.filename
       );
-
+      const fileIsUploaded = uploadedFiles.findIndex(
+        (uploadedFile: any) => uploadedFile.filename === file.filename
+      );
+      // distinguish between 3 states "pending" "synced" und "uploaded"
+      if (fileIsSynced !== -1 && fileIsUploaded !== -1) {
+        return {
+          filename: file.filename,
+          size: file.size,
+          status: "uploaded",
+          createdAt: uploadedFiles[fileIsUploaded].createdAt,
+        };
+      } else if (fileIsSynced !== -1) {
+        return {
+          filename: file.filename,
+          size: file.size,
+          status: "synced",
+          createdAt: "N/A",
+        };
+      }
       return {
         filename: file.filename,
         size: file.size,
-        status: fileIsSynced >= 0 ? "synced" : "pending",
+        status: "pending",
         createdAt: "N/A",
       };
     });
+    console.log(tmpData);
+
     setData(tmpData);
   };
 
