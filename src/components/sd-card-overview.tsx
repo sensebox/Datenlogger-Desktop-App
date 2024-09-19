@@ -174,6 +174,7 @@ export default function SDCardOverview() {
     try {
       for (let index = 0; index < files.length; index++) {
         const file = data[index];
+        if (file.status === "synced" || file.status === "uploaded") return;
         if (file.filename) await downloadFile(file.filename);
       }
       checkFilesUploaded(files);
