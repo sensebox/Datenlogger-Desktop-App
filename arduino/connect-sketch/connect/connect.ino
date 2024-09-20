@@ -12,6 +12,7 @@
 #include <SPI.h>
 #include <senseBoxIO.h>
 // #include <MD5.h>
+#include <CRC32.h>  // Füge die CRC32-Bibliothek hinzu
 
 // set up variables using the SD utility library functions:
 Sd2Card card;
@@ -288,36 +289,55 @@ SdFile getParentDir(const char *filepath, int *index) {
 }
 
 
+
 void printFileContent(const char* filename) {
   File file = SD.open(filename);
   Serial.write(filename);
   Serial.write("|");
-  //size_t bufferSize = file.size();
-  //int counter = 0;
-  //char buf[bufferSize + 1]; // +1 für das Nullzeichen am Ende
+
   if (file) {
-    //while (file.available()) {
-    //  char c = file.read();
-    //  if (c == ',') {
-    //    counter++;
-    //  }
-    //  Serial.write(c);
-      //buf[counter] = c;
-      //counter++;
-    //}
-    while (file.available()) {
-      Serial.write(file.read());
+    // CRC32-Objekt zur Berechnung der Checksumme
+    CRC32 crc;
+
+    // Den Dateinamen in die CRC32-Berechnung einbeziehen
+    for (int i = 0; filename[i] != '\0'; i++) {
+      crc.update(filename[i]);  // Jeden Charakter des Dateinamens hinzufügen
     }
-    //buf[counter] = '\0';
+
+    // Buffer zum Speichern der ersten Zeile
+    String firstLine = "";
+    bool isFirstLine = true;
+
+    while (file.available()) {
+      char c = file.read();
+      Serial.write(c);
+
+      // Erste Zeile in den Buffer schreiben
+      if (isFirstLine && c != '\n') {
+        firstLine += c;
+        crc.update(c);  // CRC32-Checksumme für die erste Zeile aktualisieren
+      } else if (c == '\n') {
+        isFirstLine = false;  // Nach der ersten Zeile aufhören
+      }
+    }
+
     file.close();
-    //Serial.write(buffer);
+
+    // CRC32-Checksumme berechnen
+    uint32_t checksum = crc.finalize();
+
+    // Checksumme als Hex-Wert zur Nachricht hinzufügen
+    Serial.write("|");
+    Serial.print(checksum, HEX);  // CRC32-Checksumme in Hex ausgeben
     Serial.write("|");
     Serial.write("end");
-    //printMd5Hash(buf, bufferSize);
+
   } else {
     Serial.println("Fehler beim Öffnen der Datei.");
   }
 }
+
+
 
 // void printMd5Hash (char* fileContent, size_t bufferSize ){
 //     unsigned char* hash = MD5::make_hash(fileContent);
