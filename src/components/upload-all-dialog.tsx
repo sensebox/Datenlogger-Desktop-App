@@ -27,6 +27,7 @@ import { FileStats } from "@/types";
 import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
 import { useAuth } from "./auth-provider";
 import { useFileStore } from "@/lib/store/files";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 export function UploadAllDialog({
   deviceId,
@@ -53,6 +54,8 @@ export function UploadAllDialog({
     const getFileStats = async () => {
       const stats: FileStats[] = [];
       files.map(async (file: any) => {
+        // if the file is not on the device, skip it
+        if (file.status !== "synced") return;
         const csvContent = await readCSVFile(
           `.reedu/data/${deviceId}/${file.filename}`
         );
@@ -172,9 +175,16 @@ export function UploadAllDialog({
           <DialogDescription className="text-sm text-gray-600 mt-1">
             Bevor du alle Dateien auf einmal hochlädst kannst du unten durch die
             Dateien scrollen um deine Eingabe zu überprüfen.
+            <Alert variant={"warning"}>
+              <AlertTitle>Achtung!</AlertTitle>
+              <AlertDescription>
+                Der Upload kann etwas dauern, da die openSenseMap ein Rate-Limit
+                von maximal 6 Uploads pro Minute hat.
+              </AlertDescription>
+            </Alert>
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="">
           {loading ? (
             <div className="flex justify-center items-center text-blue-500">
               <p>
