@@ -138,12 +138,13 @@ export default function SDCardOverview() {
   const downloadAllFiles = async () => {
     try {
       for (let index = 0; index < files.length; index++) {
-        consol;
         const file = data[index];
         if (file.status === "synced" || file.status === "uploaded") return;
         if (file.filename) await downloadFile(file.filename);
       }
-      checkFilesUploaded(files);
+      if (config?.sensebox_id) {
+        setFiles(await checkFilesUploaded(files, config?.sensebox_id));
+      }
       toast({
         variant: "success",
         description: `Alle Daten erfolgreicher auf dem Computer gespeichert.`,
