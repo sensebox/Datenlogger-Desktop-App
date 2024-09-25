@@ -26,14 +26,13 @@ import { FileOverview } from "./ui/file-overview";
 import { FileStats } from "@/types";
 import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
 import { useAuth } from "./auth-provider";
+import { useFileStore } from "@/lib/store/files";
 
 export function UploadAllDialog({
   deviceId,
-  files,
   disabled,
 }: {
   deviceId: any;
-  files: any;
   disabled: boolean;
 }) {
   const { toast } = useToast();
@@ -41,8 +40,9 @@ export function UploadAllDialog({
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
-  const [data, setData] = useState<FileStats[]>(files);
   const [uploadCount, setUploadCount] = useState<number>(0);
+  const [data, setData] = useState<FileStats[]>([]);
+  const { files } = useFileStore();
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
@@ -107,6 +107,10 @@ export function UploadAllDialog({
     }
   };
 
+  useEffect(() => {
+    console.log(data);
+  }, [data]);
+
   const uploadFile = async (filename: any) => {
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
     const response = await fetch(
@@ -137,10 +141,13 @@ export function UploadAllDialog({
         duration: 5000,
       });
     } else {
+      // create a checksum based on filename and the first line of the csv
+      const checksum = `${filename}_${csv.split("\n")[0]}`;
+
       await invoke("insert_data", {
         filename: filename,
         device: deviceId,
-        checksum: "",
+        checksum: checksum,
       });
     }
   };

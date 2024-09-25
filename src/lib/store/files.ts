@@ -1,12 +1,12 @@
-import { FileInfo } from "@/types";
+import { FileStats } from "@/types";
 import { create } from "zustand";
 
 interface FilesState {
-  files: FileInfo[];
-  setFiles: (files: FileInfo[]) => void;
+  files: FileStats[];
+  setFiles: (files: FileStats[]) => void;
 }
 
 export const useFileStore = create<FilesState>()((set) => ({
   files: [],
-  setFiles: (files: FileInfo[]) => set({ files: files }),
+  setFiles: (files: FileStats[]) => set({ files: files }),
 }));

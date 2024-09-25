@@ -9,8 +9,19 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, DownloadIcon, Upload, TrashIcon } from "lucide-react";
+import {
+  FileText,
+  DownloadIcon,
+  Upload,
+  TrashIcon,
+  Check,
+  CheckIcon,
+  Cross,
+  X,
+} from "lucide-react";
 import { UploadDialog } from "./upload-dialog";
+import { getFileInfos } from "@/lib/fs";
+import { useFileStore } from "@/lib/store/files";
 
 type FileTableProps = {
   data: Array<any>;
@@ -21,12 +32,13 @@ type FileTableProps = {
 };
 
 export function FileTable({
-  data,
   config,
   syncFiles,
   downloadFile,
   deleteFile,
 }: FileTableProps) {
+  const { files } = useFileStore();
+
   const formatBytes = (bytes: any) => {
     if (bytes === 0) return "0 Bytes";
     const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
@@ -35,7 +47,8 @@ export function FileTable({
     return `${formattedSize} ${sizes[i]}`;
   };
 
-  const getStatusClasses = (status) => {
+  const getStatusClasses = (status: string) => {
+    console.log(status);
     switch (status) {
       case "uploaded":
         return "bg-green-100 text-green-800";
@@ -43,10 +56,13 @@ export function FileTable({
         return "bg-red-100 text-red-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
+      case "synced":
+        return "bg-blue-100 text-blue-800";
       default:
-        return "bg-blue-100 text-blue-800"; // Für alle anderen Fälle
+        return "bg-red-100 text-red-800"; // Für alle anderen Fälle
     }
   };
+
   return (
     <Table>
       <TableHeader>
@@ -54,11 +70,12 @@ export function FileTable({
           <TableHead className="text-green-800">Datei</TableHead>
           <TableHead className="text-green-800">Größe</TableHead>
           <TableHead className="text-green-800">Status</TableHead>
+          <TableHead className="text-green-800">Checksum</TableHead>
           <TableHead className="text-green-800">Aktionen</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.length === 0 && config?.name && (
+        {files.length === 0 && config?.name && (
           <TableRow>
             <TableCell colSpan={4} className="text-center">
               <Button onClick={syncFiles} className="mt-4 bg-green-500">
@@ -68,7 +85,7 @@ export function FileTable({
             </TableCell>
           </TableRow>
         )}
-        {data.length === 0 && !config?.name && (
+        {files.length === 0 && !config?.name && (
           <TableRow>
             <TableCell colSpan={4} className="text-center">
               <p className="text-gray-600">
@@ -77,7 +94,7 @@ export function FileTable({
             </TableCell>
           </TableRow>
         )}
-        {data.map((file, index) => (
+        {files.map((file, index) => (
           <TableRow key={index} className="hover:bg-gray-80 transition-colors">
             <TableCell className="flex items-center gap-4">
               <FileText className="w-5 h-5 text-green-500" />
@@ -93,19 +110,31 @@ export function FileTable({
                   file.status
                 )}`}
               >
-                {file.status === "synced" ? (
-                  <DownloadIcon className="w-4 h-4" />
+                {file.status === "uploaded" ? (
+                  <>
+                    <CheckIcon className="w-4 h-4" />
+                    Hochgeladen
+                  </>
+                ) : file.status === "synced" ? (
+                  <>
+                    <DownloadIcon className="w-4 h-4" />
+                    Runtergeladen
+                  </>
+                ) : file.status === "pending" ? (
+                  <>
+                    <DownloadIcon className="w-4 h-4" />
+                    Auf dem Gerät
+                  </>
                 ) : (
-                  <Upload className="w-4 h-4" />
+                  <>
+                    <X className="w-4 h-4" />
+                    Fehler
+                  </>
                 )}
-                {file.status === "uploaded"
-                  ? "Hochgeladen"
-                  : file.status === "synced"
-                  ? "Auf dem PC"
-                  : file.status === "pending"
-                  ? "Auf dem Gerät"
-                  : "fehlgeschlagen"}
               </Badge>
+            </TableCell>
+            <TableCell>
+              <span className="text-gray-600">{file.checksum}</span>
             </TableCell>
             <TableCell>
               <div className="flex justify-center gap-2">
@@ -120,7 +149,9 @@ export function FileTable({
                 <UploadDialog
                   filename={file.filename ?? ""}
                   deviceId={config?.sensebox_id || ""}
-                  disabled={file.status !== "synced"}
+                  disabled={
+                    file.status !== "synced" || file.status === "uploaded"
+                  }
                 />
                 <Button
                   onClick={() => deleteFile(file.filename ?? "")}

@@ -26,10 +26,13 @@ import {
 import { invoke } from "@tauri-apps/api/tauri";
 import { FileStats, SenseboxConfig, SerialPort, Upload } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
-import { createDirectory, readDirectory } from "@/lib/fs";
+import { createDirectory, readCSVFile, readDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import { useToast } from "./ui/use-toast";
 import { useFileStore } from "@/lib/store/files";
+import { read, readFile } from "fs";
+import { readConfig } from "@/lib/helpers/readConfig";
+import { set } from "date-fns";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -45,7 +48,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   const [selectedBoard, setSelectedBoard] = React.useState<SerialPort | null>(
     null
   );
-  const { setConfig, setSerialPort } = useBoardStore();
+  const { setConfig, setSerialPort, config } = useBoardStore();
   const { files, setFiles } = useFileStore();
   const [loading, setLoading] = React.useState(false);
 
@@ -54,17 +57,17 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     setSerialPorts(await invoke("list_serialport_devices"));
   }
 
-  React.useEffect(() => {
-    readDir();
-  }, []);
-
   async function connectAndReadConfig(serialPort: SerialPort) {
     try {
       setLoading(true);
+      if (!serialPort) {
+        throw new Error("No serial port selected.");
+      }
       const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
         port: serialPort.port,
         command: "<3 config>",
       });
+
       await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
       const files: FileStats[] = await invoke("connect_list_files", {
         port: serialPort?.port,
@@ -91,24 +94,29 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     }
   }
 
-  const readDir = async () => {
-    const files = await readDirectory(`.reedu/data/`);
-    const mappedFiles: File[] = [];
-    // exclude all hidden folders
-    const filteredFiles = files.filter((file) => !file.name.startsWith("."));
+  const selectFolder = async (id: string) => {
+    const data = await readDirectory(`.reedu/data/${id}`);
+    const filteredData = data.filter(
+      (file) => file.name?.endsWith(".CSV") || file.name?.endsWith(".csv")
+    );
+    const fileWithSize = await Promise.all(
+      filteredData.map(async (file) => {
+        const csvContent = await readCSVFile(`.reedu/data/${id}/${file.name}`);
+        const textEncoder = new TextEncoder();
+        const size = textEncoder.encode(csvContent).length;
+        return {
+          filename: file.name,
+          size: size,
+          status: "synced",
+        };
+      })
+    );
+    setFiles(fileWithSize);
 
-    // for (let index = 0; index < files.length; index++) {
-    //   const element = files[index];
-    //   const fileIsUploaded = uploadedFiles.findIndex(
-    //     (uploadedFile) => uploadedFile.filename === element.name
-    //   );
-    //   mappedFiles.push({
-    //     filename: element.name || "no name",
-    //     size: "",
-    //     status: fileIsUploaded >= 0 ? "uploaded" : "pending",
-    //   });
-    // }
-    setFolders(filteredFiles);
+    const config = await readCSVFile(`.reedu/data/${id}/config.cfg`);
+    const boardConfig: SenseboxConfig = readConfig(config);
+    setOpen(false);
+    setConfig(boardConfig);
   };
 
   return (
@@ -143,6 +151,14 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                   <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
                 </span>
               </>
+            ) : folders ? (
+              <div className="flex flex-row">
+                <FolderIcon className="mr-2 h-4 w-4 text-green-400" />
+                <span className="flex gap-4 text-green-600">
+                  {config?.sensebox_id}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                </span>
+              </div>
             ) : (
               <span className="flex gap-4 text-gray-500">
                 No device selected{" "}
@@ -188,8 +204,8 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                 {folders.map((folder, idx) => (
                   <CommandItem
                     key={idx}
-                    onSelect={() => {
-                      console.log(folder);
+                    onSelect={(element) => {
+                      selectFolder(element);
                     }}
                     className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
                   >

@@ -104,14 +104,14 @@ export function UploadDialog({
         description: "Die Datei wurde erfolgreich hochgeladen",
         duration: 1000,
       });
+      const checksum = `${filename}_${csv.split("\n")[0]}`;
       await invoke("insert_data", {
         filename: filename,
         device: deviceId,
-        checksum: "",
+        checksum: checksum,
       });
     }
     setLoading(false);
-    setCounter((counter: number) => counter + 1);
     event.preventDefault();
   };
 

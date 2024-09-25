@@ -28,7 +28,7 @@ import { useBoardStore } from "@/lib/store/board";
 import { useFileStore } from "@/lib/store/files";
 import { FileContent, FileStats } from "@/types";
 import { Button } from "./ui/button";
-import { readDirectory, deleteFile } from "@/lib/fs";
+import { readDirectory, deleteFile, readCSVFile } from "@/lib/fs";
 import { invoke } from "@tauri-apps/api/tauri";
 import { toast } from "./ui/use-toast";
 import BoardSwitcher from "./board-switcher";
@@ -49,12 +49,10 @@ export default function SDCardOverview() {
   const { config, serialPort } = useBoardStore();
   const { files, setFiles } = useFileStore();
   const { signInResponse } = useAuth();
-  const [data, setData] = useState<FileStats[]>(files);
 
   useEffect(() => {
     if (files.length > 0) {
       checkFilesUploaded(files);
-      setData(files);
     }
   }, [files]);
 
@@ -66,10 +64,12 @@ export default function SDCardOverview() {
     const uploadedFiles: any = await invoke("get_data", {
       device: config?.sensebox_id,
     });
+
     const tmpData: any[] = files.map((file) => {
       const fileIsSynced = syncedFiles.findIndex(
-        (syncedFile) => syncedFile.name === file.filename
+        (syncedFile) => syncedFile === file.filename
       );
+
       const fileIsUploaded = uploadedFiles.findIndex(
         (uploadedFile: any) => uploadedFile.filename === file.filename
       );
@@ -96,7 +96,7 @@ export default function SDCardOverview() {
         createdAt: "N/A",
       };
     });
-
+    console.log(tmpData);
     setData(tmpData);
   };
 
@@ -107,7 +107,9 @@ export default function SDCardOverview() {
         command: "<1 root>",
       });
       setFiles(files);
-      checkFilesUploaded(files);
+      if (files.length === 0) {
+        checkFilesUploaded(files);
+      }
 
       toast({
         variant: "success",
@@ -131,6 +133,7 @@ export default function SDCardOverview() {
         command: `<2 /${fileName}>`,
       });
       saveDataToFile(fileContent.content, fileName);
+
       checkFilesUploaded(files);
     } catch (error: any) {
       toast({
@@ -141,7 +144,11 @@ export default function SDCardOverview() {
     }
   };
 
-  const saveDataToFile = async (data: string, filePath: string) => {
+  const saveDataToFile = async (
+    data: string,
+    filePath: string,
+    checksum: string
+  ) => {
     try {
       await invoke("save_data_to_file", {
         data: data,
@@ -214,19 +221,19 @@ export default function SDCardOverview() {
               <p className="text-lg text-blue-900">{config?.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-blue-600">Geräte-ID</p>
+              <p className="text-sm font-medium text-blue-600">senseBox-ID</p>
               <p className="text-lg text-blue-900">{config?.sensebox_id} </p>
             </div>
           </div>
           <div className="flex flex-row justify-between mt-4">
             <div>
               <p className="text-sm font-medium text-blue-600 mb-2">
-                Port auswählen
+                Gerät auswählen
               </p>
               <BoardSwitcher />
             </div>
             <SDCardTableButtonBar
-              data={data}
+              data={files}
               config={config}
               downloadAllFiles={downloadAllFiles}
               deleteAllFiles={deleteAllFiles}
@@ -234,7 +241,7 @@ export default function SDCardOverview() {
           </div>
         </div>
         <FileTable
-          data={data}
+          data={files}
           config={config}
           syncFiles={syncFiles}
           downloadFile={downloadFile}

@@ -19,7 +19,7 @@ use tokio::time::{timeout, Duration as TokioDuration, Instant};
 pub struct File {
     pub filename: String,
     pub content: String,
-    pub md5hash: String,
+    pub checksum: String,
 }
 
 #[command]
@@ -165,6 +165,28 @@ pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxCo
         }
     }
 
+    let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap())
+    .join(".reedu")
+    .join("data")
+    .join(config.sensebox_id.clone());
+    
+    std::fs::create_dir(&app_dir);
+
+    // let app_dir = app_handle.path_resolver().app_data_dir().unwrap();
+    let file_path = format!("config.cfg");
+    let app_str = app_dir.to_str().unwrap();
+    let realpath = format!("{}/{}", app_str, file_path);
+    println!("File is saved at: {}", realpath);
+    match std::fs::write(&realpath, &content) {
+        Ok(_) => {
+            let success_message = format!("File '{}' successfully saved.", file_path);
+        }
+        Err(err) => {
+            let error_message = format!("Error when saving... '{}': {}", file_path, err);
+            return Err(error_message)
+        }
+    }
+
     Ok(config)
 }
 #[command]
@@ -243,17 +265,17 @@ pub async fn get_file_content(port: &str, command: &str) -> Result<File, String>
     let parts: Vec<&str> = collected_data.trim().split('|').collect();
     // if parts has more than 2 parts then return the parts as a File struct
     // if not return an error
-    if parts.len() != 3 {
-        return Err("Error: File has less than 3 parts".to_string());
+    if parts.len() != 4 {
+        return Err("Error: File has not 4 parts".to_string());
     }
     let filename = parts[0].to_string();
     let content = parts[1].to_string();
-    let md5hash = parts[2].to_string();
+    let checksum = parts[2].to_string();
 
     return Ok(File {
         filename,
         content,
-        md5hash,
+        checksum,
     });
 }
 
