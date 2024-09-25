@@ -96,7 +96,6 @@ export default function SDCardOverview() {
         createdAt: "N/A",
       };
     });
-    console.log(tmpData);
     setData(tmpData);
   };
 
@@ -180,6 +179,7 @@ export default function SDCardOverview() {
   const downloadAllFiles = async () => {
     try {
       for (let index = 0; index < files.length; index++) {
+        consol;
         const file = data[index];
         if (file.status === "synced" || file.status === "uploaded") return;
         if (file.filename) await downloadFile(file.filename);

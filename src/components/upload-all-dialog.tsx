@@ -107,10 +107,6 @@ export function UploadAllDialog({
     }
   };
 
-  useEffect(() => {
-    console.log(data);
-  }, [data]);
-
   const uploadFile = async (filename: any) => {
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
     const response = await fetch(
@@ -165,7 +161,7 @@ export function UploadAllDialog({
           className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
         >
           <UploadCloud className="w-4 h-4 mr-2" />
-          Alle Dateien hochladen
+          Alles an die openSenseMap hochladen
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">

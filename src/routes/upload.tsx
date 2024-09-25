@@ -16,7 +16,6 @@ export default function Upload() {
   useEffect(() => {
     const readDir = async () => {
       const fileEntries = await readDirectory(".reedu/data", false);
-      console.log(fileEntries);
       setFolders(fileEntries);
     };
 

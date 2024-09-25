@@ -24,7 +24,7 @@ export const SDCardTableButtonBar = ({
         className="mt-4 bg-blue-500"
       >
         <DownloadIcon className="mr-2 h-4 w-4  text-white" />
-        Alle Daten runterladen
+        Alles auf der Festplatte speichern
       </Button>
       <UploadAllDialog
         disabled={data.length === 0}
@@ -37,7 +37,7 @@ export const SDCardTableButtonBar = ({
         variant={"destructive"}
       >
         <Trash className="mr-2 h-4 w-4  text-white" />
-        Alle Daten löschen
+        Gerätespeicher leeren
       </Button>
     </div>
   );

@@ -48,7 +48,6 @@ export function FileTable({
   };
 
   const getStatusClasses = (status: string) => {
-    console.log(status);
     switch (status) {
       case "uploaded":
         return "bg-green-100 text-green-800";
