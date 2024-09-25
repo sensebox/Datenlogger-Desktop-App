@@ -320,12 +320,6 @@ pub fn get_data(device: String) -> Result<Vec<Upload>, String> {
         .load::<Upload>(&mut connection)
         .expect("Error loading posts.");
 
-    // println!("Displaying {} posts", results.len());
-    // for post in results {
-    //     println!("{}", post.device_id);
-    //     println!("-----------\n");
-    //     println!("{}", post.filename);
-    // }
     Ok(results)
 }
 
@@ -344,6 +338,17 @@ pub fn insert_data(filename: String, device: String, checksum: String) {
     let result = diesel::insert_into(uploads::table)
         .values(new_upload)
         .execute(&mut connection);
+
+    println!("{:?}", result);
+}
+
+#[tauri::command]
+pub fn reset_data() {
+    use crate::schema::uploads::dsl::*;
+
+    let mut connection = db::establish_connection();
+
+    let result = diesel::delete(uploads).execute(&mut connection);
 
     println!("{:?}", result);
 }

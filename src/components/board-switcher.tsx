@@ -33,6 +33,7 @@ import { useFileStore } from "@/lib/store/files";
 import { read, readFile } from "fs";
 import { readConfig } from "@/lib/helpers/readConfig";
 import { set } from "date-fns";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -73,7 +74,11 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
         port: serialPort?.port,
         command: "<1 root>",
       });
-      setFiles(files);
+      const checkedFiles = await checkFilesUploaded(
+        files,
+        boardConfig.sensebox_id
+      );
+      setFiles(checkedFiles);
       toast({
         variant: "success",
         description: "Verbindung erfolgreich hergestellt.",

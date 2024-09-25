@@ -39,6 +39,8 @@ import { useAuth } from "./auth-provider";
 import { UserNav } from "./user-nav";
 import { FileTable } from "./sd-card-table";
 import { SDCardTableButtonBar } from "./sd-card-table-button-bar";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { deleteFilesFromTable } from "@/lib/helpers/deleteFilesFromTable";
 
 type Device = {
   name: string;
@@ -50,64 +52,19 @@ export default function SDCardOverview() {
   const { files, setFiles } = useFileStore();
   const { signInResponse } = useAuth();
 
-  useEffect(() => {
-    if (files.length > 0) {
-      checkFilesUploaded(files);
-    }
-  }, [files]);
-
-  const checkFilesUploaded = async (files: any[]) => {
-    const syncedFiles = await readDirectory(
-      `.reedu/data/${config?.sensebox_id}`
-    );
-
-    const uploadedFiles: any = await invoke("get_data", {
-      device: config?.sensebox_id,
-    });
-
-    const tmpData: any[] = files.map((file) => {
-      const fileIsSynced = syncedFiles.findIndex(
-        (syncedFile) => syncedFile === file.filename
-      );
-
-      const fileIsUploaded = uploadedFiles.findIndex(
-        (uploadedFile: any) => uploadedFile.filename === file.filename
-      );
-      // distinguish between 3 states "pending" "synced" und "uploaded"
-      if (fileIsSynced !== -1 && fileIsUploaded !== -1) {
-        return {
-          filename: file.filename,
-          size: file.size,
-          status: "uploaded",
-          createdAt: uploadedFiles[fileIsUploaded].createdAt,
-        };
-      } else if (fileIsSynced !== -1) {
-        return {
-          filename: file.filename,
-          size: file.size,
-          status: "synced",
-          createdAt: "N/A",
-        };
-      }
-      return {
-        filename: file.filename,
-        size: file.size,
-        status: "pending",
-        createdAt: "N/A",
-      };
-    });
-    setData(tmpData);
-  };
-
   const syncFiles = async () => {
     try {
-      const files: FileStats[] = await invoke("connect_list_files", {
+      const filesFromBoard: FileStats[] = await invoke("connect_list_files", {
         port: serialPort?.port,
         command: "<1 root>",
       });
-      setFiles(files);
+      setFiles(filesFromBoard);
       if (files.length === 0) {
-        checkFilesUploaded(files);
+        if (config?.sensebox_id) {
+          setFiles(
+            await checkFilesUploaded(filesFromBoard, config?.sensebox_id)
+          );
+        }
       }
 
       toast({
@@ -132,8 +89,9 @@ export default function SDCardOverview() {
         command: `<2 /${fileName}>`,
       });
       saveDataToFile(fileContent.content, fileName);
-
-      checkFilesUploaded(files);
+      if (config?.sensebox_id) {
+        setFiles(await checkFilesUploaded(files, config?.sensebox_id));
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -143,16 +101,17 @@ export default function SDCardOverview() {
     }
   };
 
-  const saveDataToFile = async (
-    data: string,
-    filePath: string,
-    checksum: string
-  ) => {
+  const saveDataToFile = async (data: string, filePath: string) => {
     try {
       await invoke("save_data_to_file", {
         data: data,
         deviceFolder: config?.sensebox_id,
         filePath: filePath,
+      });
+      toast({
+        variant: "success",
+        description: `Datei ${filePath} erfolgreich auf dem Computer gespeichert.`,
+        duration: 3000,
       });
     } catch (error: any) {
       toast({
@@ -199,7 +158,21 @@ export default function SDCardOverview() {
     }
   };
 
-  const deleteAllFiles = async () => {};
+  const deleteAllFiles = async () => {
+    try {
+      deleteFilesFromTable();
+      const uploadedFiles: any = await invoke("reset_data", {
+        device: config?.sensebox_id,
+      });
+      console.log(uploadedFiles);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        description: `Error deleting files: ${error}`,
+        duration: 3000,
+      });
+    }
+  };
 
   return (
     <Card className="w-full max-w-4xl mx-auto bg-white  rounded-lg overflow-hidden">

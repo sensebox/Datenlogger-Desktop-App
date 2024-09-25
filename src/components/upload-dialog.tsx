@@ -18,6 +18,9 @@ import storage from "@/lib/local-storage";
 import { FileOverview } from "./ui/file-overview";
 import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
 import { useAuth } from "./auth-provider";
+import { useFileStore } from "@/lib/store/files";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { createChecksum } from "@/lib/helpers/createChecksum";
 
 type UploadDialogProps = {
   filename: string;
@@ -46,6 +49,7 @@ export function UploadDialog({
     firstDate: "",
     lastDate: "",
   });
+  const { files, setFiles } = useFileStore();
 
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
@@ -104,13 +108,16 @@ export function UploadDialog({
         description: "Die Datei wurde erfolgreich hochgeladen",
         duration: 1000,
       });
-      const checksum = `${filename}_${csv.split("\n")[0]}`;
+      const checksum = createChecksum(`${filename}_${csv.split("\n")[0]}`);
       await invoke("insert_data", {
         filename: filename,
         device: deviceId,
+        size: csv.length,
         checksum: checksum,
       });
+      setFiles(await checkFilesUploaded(files, deviceId));
     }
+    setOpen(false);
     setLoading(false);
     event.preventDefault();
   };

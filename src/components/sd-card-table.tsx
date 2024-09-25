@@ -20,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import { UploadDialog } from "./upload-dialog";
-import { getFileInfos } from "@/lib/fs";
 import { useFileStore } from "@/lib/store/files";
 
 type FileTableProps = {
@@ -148,9 +147,7 @@ export function FileTable({
                 <UploadDialog
                   filename={file.filename ?? ""}
                   deviceId={config?.sensebox_id || ""}
-                  disabled={
-                    file.status !== "synced" || file.status === "uploaded"
-                  }
+                  disabled={file.status !== "synced"}
                 />
                 <Button
                   onClick={() => deleteFile(file.filename ?? "")}
