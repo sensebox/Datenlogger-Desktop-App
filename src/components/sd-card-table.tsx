@@ -18,6 +18,7 @@ import {
   CheckIcon,
   Cross,
   X,
+  Cpu,
 } from "lucide-react";
 import { UploadDialog } from "./upload-dialog";
 import { useFileStore } from "@/lib/store/files";
@@ -121,7 +122,7 @@ export function FileTable({
                   </>
                 ) : file.status === "pending" ? (
                   <>
-                    <DownloadIcon className="w-4 h-4" />
+                    <Cpu className="w-4 h-4" />
                     Auf dem Gerät
                   </>
                 ) : (
