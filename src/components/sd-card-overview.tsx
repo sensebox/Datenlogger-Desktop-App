@@ -134,7 +134,7 @@ export default function SDCardOverview() {
     try {
       for (let index = 0; index < files.length; index++) {
         const file = files[index];
-        if (file.status === "synced" || file.status === "uploaded") return;
+        if (file.status === "synced" || file.status === "uploaded") continue;
         if (file.filename) await downloadFile(file.filename);
       }
       if (config?.sensebox_id) {
