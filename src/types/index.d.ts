@@ -27,18 +27,18 @@ type Device = {
 type SenseboxConfig = {
   name: string;
   sensebox_id: string;
-  ssid: string;
-  psk: string;
-  temp_id: string;
-  humi_id: string;
-  dist_l_id: string;
-  dist_r_id: string;
-  pm10_id: string;
-  pm25_id: string;
-  acc_x_id: string;
-  acc_y_id: string;
-  acc_z_id: string;
-  speed_id: string;
+  ssid?: string;
+  psk?: string;
+  temp_id?: string;
+  humi_id?: string;
+  dist_l_id?: string;
+  dist_r_id?: string;
+  pm10_id?: string;
+  pm25_id?: string;
+  acc_x_id?: string;
+  acc_y_id?: string;
+  acc_z_id?: string;
+  speed_id?: string;
 };
 
 type FileContent = {
@@ -67,9 +67,15 @@ type Upload = {
   uploaded_at: Date;
 };
 
-type FileInfo = {
-  filename: string;
-  size: string;
+type FileStats = {
+  filename?: string;
+  checksum?: string;
+  deviceId?: string;
+  size?: number;
+  lines?: number;
+  firstDate?: string;
+  lastDate?: string;
+  status?: string;
 };
 
 export {
@@ -81,5 +87,5 @@ export {
   SignInData,
   SignInResponse,
   Upload,
-  FileInfo,
+  FileStats,
 };

@@ -1,13 +1,18 @@
 import * as React from "react";
-import { Check, ChevronsUpDown, ListRestartIcon } from "lucide-react";
-
+import {
+  Check,
+  ChevronDown,
+  ChevronsDown,
+  ChevronsUpDown,
+  Cpu,
+  FolderIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -19,11 +24,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { invoke } from "@tauri-apps/api/tauri";
-import { SenseboxConfig, SerialPort } from "@/types";
+import { FileStats, SenseboxConfig, SerialPort, Upload } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
-import { createDirectory } from "@/lib/fs";
+import { createDirectory, readCSVFile, readDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import { useToast } from "./ui/use-toast";
+import { useFileStore } from "@/lib/store/files";
+import { read, readFile } from "fs";
+import { readConfig } from "@/lib/helpers/readConfig";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -39,24 +48,60 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   const [selectedBoard, setSelectedBoard] = React.useState<SerialPort | null>(
     null
   );
-  const { setConfig, setSerialPort } = useBoardStore();
+  const { setConfig, setSerialPort, config } = useBoardStore();
+  const { files, setFiles } = useFileStore();
   const [loading, setLoading] = React.useState(false);
+
+  const [folders, setFolders] = React.useState<any[]>([]);
+
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
   }
 
+  React.useEffect(() => {
+    readDir();
+  }, []);
+
+  const readDir = async () => {
+    const files = await readDirectory(`.reedu/data/`);
+    const mappedFiles: File[] = [];
+    // exclude all hidden folders
+    const filteredFiles = files.filter(
+      (file) => file.name && !file.name.startsWith(".")
+    );
+
+    setFolders(filteredFiles);
+  };
+
   async function connectAndReadConfig(serialPort: SerialPort) {
     try {
       setLoading(true);
+      if (!serialPort) {
+        throw new Error("No serial port selected.");
+      }
       const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
         port: serialPort.port,
         command: "<3 config>",
       });
+
       await createDirectory(`.reedu/data/${boardConfig.sensebox_id}`);
+      const files: FileStats[] = await invoke("connect_list_files", {
+        port: serialPort?.port,
+        command: "<1 root>",
+      });
+      const checkedFiles = await checkFilesUploaded(
+        files,
+        boardConfig.sensebox_id
+      );
+      setFiles(checkedFiles);
+      toast({
+        variant: "success",
+        description: "Verbindung erfolgreich hergestellt.",
+        duration: 5000,
+      });
       setConfig(boardConfig);
       setSerialPort(serialPort);
       setLoading(false);
-      // showToast(`Successfully opened board at:${serialPort.port} `, "success");
     } catch (error: any) {
       setLoading(false);
       console.log(error);
@@ -68,6 +113,32 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       });
     }
   }
+
+  const selectFolder = async (id: string) => {
+    const data = await readDirectory(`.reedu/data/${id}`);
+    const filteredData = data.filter(
+      (file) => file.name?.endsWith(".CSV") || file.name?.endsWith(".csv")
+    );
+    const fileWithSize = await Promise.all(
+      filteredData.map(async (file) => {
+        const csvContent = await readCSVFile(`.reedu/data/${id}/${file.name}`);
+        const textEncoder = new TextEncoder();
+        const size = textEncoder.encode(csvContent).length;
+        return {
+          filename: file.name,
+          size: size,
+          status: "synced",
+        };
+      })
+    );
+    setFiles(fileWithSize);
+
+    const config = await readCSVFile(`.reedu/data/${id}/config.cfg`);
+    const boardConfig: SenseboxConfig = readConfig(config);
+    setOpen(false);
+    setSelectedBoard(null);
+    setConfig(boardConfig);
+  };
 
   return (
     <Dialog>
@@ -84,19 +155,44 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
             size="sm"
             role="combobox"
             aria-expanded={open}
-            aria-label="Select a team"
-            className={cn("w-[200px] justify-between", className)}
+            aria-label="Select a device"
+            className={cn(
+              "w-[300px] justify-between p-3 bg-white rounded-lg shadow-md transition-colors",
+              selectedBoard
+                ? "border border-green-500"
+                : "border border-gray-300",
+              className
+            )}
           >
-            {selectedBoard ? selectedBoard.port : "No board selected"}
-            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+            {selectedBoard ? (
+              <>
+                <Cpu className="mr-2 h-4 w-4 text-green-400" />
+                <span className="flex gap-4 text-green-600">
+                  {selectedBoard.port} ({selectedBoard.product}){" "}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                </span>
+              </>
+            ) : folders ? (
+              <div className="flex flex-row">
+                <FolderIcon className="mr-2 h-4 w-4 text-green-400" />
+                <span className="flex gap-4 text-green-600">
+                  {config?.sensebox_id}
+                  <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                </span>
+              </div>
+            ) : (
+              <span className="flex gap-4 text-gray-500">
+                No device selected{" "}
+                <ChevronsUpDown className="ml-auto h-4 w-4 opacity-50" />
+              </span>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[250px] p-2 bg-white rounded-lg shadow-md">
           <Command>
             <CommandList>
-              <CommandInput placeholder="Search boards..." />
-              <CommandEmpty>No board found.</CommandEmpty>
-              <CommandGroup key="boards" heading="Boards">
+              <CommandEmpty>No device found.</CommandEmpty>
+              <CommandGroup key="devices" heading="Geräte">
                 {serialPorts?.map((serialPort, idx) => (
                   <CommandItem
                     key={idx}
@@ -105,44 +201,45 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
                       connectAndReadConfig(serialPort);
                       setOpen(false);
                     }}
-                    className="text-sm"
+                    className={cn(
+                      "flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer",
+                      selectedBoard?.port === serialPort.port
+                        ? "bg-green-100"
+                        : ""
+                    )}
                   >
-                    {serialPort.port} ({serialPort.product})
-                    <Check
-                      className={cn(
-                        "ml-auto h-4 w-4",
-                        selectedBoard?.port === serialPort.port
-                          ? "opacity-100"
-                          : "opacity-0"
-                      )}
-                    />
+                    <Cpu className="h-4 w-4 text-blue-400" />
+                    <span className="flex-1 text-sm">
+                      {serialPort.port} ({serialPort.product})
+                    </span>
+                    {selectedBoard?.port === serialPort.port && (
+                      <Check className="ml-auto h-4 w-4 text-green-400" />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
             </CommandList>
             <CommandSeparator />
             <CommandList>
-              <CommandGroup>
-                <DialogTrigger asChild>
+              <CommandGroup key="folders" heading="Runtergeladene Ordner">
+                {folders.map((folder, idx) => (
                   <CommandItem
-                    onSelect={() => {
-                      listSerialports();
+                    key={idx}
+                    onSelect={(element) => {
+                      selectFolder(element);
                     }}
+                    className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
                   >
-                    <ListRestartIcon className="mr-2 h-5 w-5" />
-                    Refresh List
+                    <FolderIcon className="h-4 w-4 text-blue-400" />
+                    <span className="flex-1 text-sm">{folder.name}</span>
                   </CommandItem>
-                </DialogTrigger>
+                ))}
               </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>
       </Popover>
-      {loading ? (
-        <div>
-          <LoadingOverlay></LoadingOverlay>
-        </div>
-      ) : null}
+      {loading && <LoadingOverlay />}
     </Dialog>
   );
 }

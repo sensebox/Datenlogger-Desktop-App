@@ -9,15 +9,17 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 mod cmd;
 mod core;
-
 mod db;
 mod fileinfo;
 mod models;
 mod schema;
 mod sensebox;
 mod serialports;
+mod serialPortAsync;
+
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
+
 
 fn main() {
     core::config::UserConfig::init_config();
@@ -40,7 +42,10 @@ fn main() {
             cmd::get_file_content,
             cmd::get_data,
             cmd::insert_data,
-            cmd::open_in_explorer,
+            cmd::open_in_explorer,    
+            cmd::reset_data,
+            serialPortAsync::read_serialport,   
+            serialPortAsync::write_and_read_serialport,
         ])
         .run(context)
         .expect("error while running tauri application");

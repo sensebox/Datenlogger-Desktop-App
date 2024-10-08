@@ -1,17 +1,19 @@
 import * as React from "react";
-
+import { useNavigate } from "react-router-dom"; // Importiere useNavigate
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/icons";
 import { useAuth } from "./auth-provider";
+import { LockIcon, MailIcon, ArrowLeft } from "lucide-react"; // Importiere ArrowLeft
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const { onLogin } = useAuth();
+  const navigate = useNavigate(); // Verwende useNavigate für die Navigation
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -21,53 +23,69 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
       email: { value: string };
       password: { value: string };
     };
-    const email = target.email.value; // typechecks!
-    const password = target.password.value; // typechecks!
+    const email = target.email.value;
+    const password = target.password.value;
 
     await onLogin(email, password);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+    setIsLoading(false);
   }
 
   return (
-    <div className={cn("grid gap-6", className)} {...props}>
-      <form onSubmit={onSubmit}>
+    <div
+      className={cn("grid gap-6 p-4 rounded-lg shadow-md bg-white", className)}
+      {...props}
+    >
+      {/* Zurück-Button */}
+      <Button
+        variant="ghost"
+        onClick={() => navigate(-1)} // Geht zur vorherigen Seite zurück
+        className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        Zurück
+      </Button>
+
+      <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-2">
-          <div className="grid gap-1">
-            {/* <input name="csrfToken" type="hidden" defaultValue={csrfToken} /> */}
+          <div className="flex items-center space-x-2 border-b pb-2">
+            <MailIcon className="h-5 w-5 text-gray-500" />
             <Label className="sr-only" htmlFor="email">
               Email
             </Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder="Email"
               type="email"
               autoCapitalize="none"
               autoComplete="email"
               autoCorrect="off"
               disabled={isLoading}
+              className="w-full px-2 py-1 border-none focus:ring-0"
             />
+          </div>
+          <div className="flex items-center space-x-2 border-b pb-2">
+            <LockIcon className="h-5 w-5 text-gray-500" />
             <Label className="sr-only" htmlFor="password">
               Password
             </Label>
             <Input
               id="password"
-              placeholder="password"
+              placeholder="Password"
               type="password"
               autoCapitalize="none"
               autoCorrect="off"
               disabled={isLoading}
+              className="w-full px-2 py-1 border-none focus:ring-0"
             />
           </div>
-          <Button disabled={isLoading}>
-            {isLoading && (
-              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Sign In with openSenseMap
-          </Button>
         </div>
+        <Button
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+          disabled={isLoading}
+        >
+          {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+          Sign In to openSenseMap
+        </Button>
       </form>
     </div>
   );

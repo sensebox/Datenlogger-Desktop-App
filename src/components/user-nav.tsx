@@ -1,4 +1,4 @@
-import { LogOut, Settings, User } from "lucide-react";
+import { LogIn, LogOut, Settings, User, UserIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import { Button, buttonVariants } from "./ui/button";
@@ -15,6 +15,8 @@ import {
 import { useAuth } from "./auth-provider";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { AvatarImage } from "@radix-ui/react-avatar";
+import osmLogo from "@/assets/favicon.svg";
 
 const getInitials = function (string: string) {
   if (!string) return "";
@@ -35,12 +37,21 @@ export function UserNav() {
       {signInResponse !== undefined ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>
+            <Button variant="ghost">
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={osmLogo} />
+                <AvatarFallback className="bg-blue-200 text-blue-500">
                   {getInitials(signInResponse.data.user.name)}
                 </AvatarFallback>
               </Avatar>
+              <div className="text-start p-1">
+                <p className="text-sm font-medium text-blue-600">
+                  {signInResponse?.data?.user?.name}{" "}
+                </p>
+                <p className="text-sm font-medium text-blue-600">
+                  {signInResponse?.data?.user?.email}{" "}
+                </p>
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -55,7 +66,7 @@ export function UserNav() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
+            {/* <DropdownMenuGroup>
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
@@ -66,7 +77,7 @@ export function UserNav() {
                 <span>Settings</span>
                 <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </DropdownMenuGroup> */}
             {signInResponse !== null && (
               <>
                 <DropdownMenuSeparator />
@@ -83,10 +94,10 @@ export function UserNav() {
         <Link
           to="/login"
           className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "right-4 top-4 md:right-8 md:top-8"
+            "flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg rounded-full px-6 py-3 transition-transform transform hover:scale-105 hover:shadow-xl"
           )}
         >
+          <LogIn className="w-5 h-5" />
           Login
         </Link>
       )}

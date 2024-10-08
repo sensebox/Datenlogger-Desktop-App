@@ -3,6 +3,7 @@ import {
   BaseDirectory,
   createDir,
   readTextFile,
+  removeFile,
 } from "@tauri-apps/api/fs";
 
 const readDirectory = async function (
@@ -27,4 +28,8 @@ const readCSVFile = async function (fileName: string) {
   return contents;
 };
 
-export { createDirectory, readDirectory, readCSVFile };
+const deleteFile = async function (fileName: string) {
+  await removeFile(fileName, { dir: BaseDirectory.Home });
+};
+
+export { createDirectory, readDirectory, readCSVFile, deleteFile };

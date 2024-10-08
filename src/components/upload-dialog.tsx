@@ -8,35 +8,78 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileUp } from "lucide-react";
+import { CloudIcon, FileText, Calendar, List, UploadCloud } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
 import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import storage from "@/lib/local-storage";
+import { FileOverview } from "./ui/file-overview";
+import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
+import { useAuth } from "./auth-provider";
+import { useFileStore } from "@/lib/store/files";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { createChecksum } from "@/lib/helpers/createChecksum";
+import { User } from "@/types";
+import { Alert } from "./ui/alert";
 
 type UploadDialogProps = {
   filename: string;
   deviceId: string;
-  setCounter: any;
+  setCounter?: any;
+  disabled?: boolean;
+};
+type FileStats = {
+  firstDate: string;
+  lastDate: string;
 };
 
 export function UploadDialog({
   filename,
   deviceId,
   setCounter,
+  disabled,
 }: UploadDialogProps) {
   const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [boxInAccount, setBoxInAccount] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
+  const { signInResponse } = useAuth();
+  const [file, setFile] = useState<FileStats>({
+    firstDate: "",
+    lastDate: "",
+  });
+  const { files, setFiles } = useFileStore();
 
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
   }, [deviceId]);
+
+  useEffect(() => {
+    // Simulate reading file stats (line count, first date)
+    const getFileStats = async () => {
+      const csvContent = await readCSVFile(
+        `.reedu/data/${deviceId}/${filename}`
+      );
+      const lines = csvContent.split("\n").length;
+      const { firstDate, lastDate } = extractDatesFromCSV(csvContent);
+
+      // @ts-ignore
+      setFile({ lines, firstDate, lastDate, deviceId: deviceId, filename });
+      // check if the account also owns the box
+      const loginResponse: any = storage.get("auth");
+      const boxes = loginResponse.data.user.boxes;
+      if (boxes.includes(deviceId)) {
+        setBoxInAccount(true);
+      }
+    };
+
+    if (open) getFileStats();
+  }, [open, deviceId, filename]);
 
   const uploadFile = async (event: any) => {
     setLoading(true);
@@ -53,7 +96,6 @@ export function UploadDialog({
       }
     );
     const answer = await response.json();
-    // if answer code is anything but ok
 
     if (
       answer.code === "BadRequest" ||
@@ -65,24 +107,27 @@ export function UploadDialog({
       setOpen(false);
       toast({
         variant: "destructive",
-        title: answer.code,
-        description: answer.message,
+        description:
+          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
         duration: 5000,
       });
     } else {
       toast({
-        title: answer,
-        description: answer,
+        variant: "success",
+        description: "Die Datei wurde erfolgreich hochgeladen",
         duration: 1000,
       });
+      const checksum = createChecksum(`${filename}_${csv.split("\n")[0]}`);
       await invoke("insert_data", {
         filename: filename,
         device: deviceId,
-        checksum: "",
+        size: csv.length,
+        checksum: checksum,
       });
+      setFiles(await checkFilesUploaded(files, deviceId));
     }
+    setOpen(false);
     setLoading(false);
-    setCounter((counter: number) => counter + 1);
     event.preventDefault();
   };
 
@@ -94,40 +139,63 @@ export function UploadDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileUp className="mr-2 h-4 w-4" />
-          Upload
+        <Button
+          size="sm"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
+          disabled={!signInResponse || disabled}
+        >
+          <UploadCloud className="w-4 h-4 mr-2" />
+          Hochladen
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">
         <DialogHeader>
-          <DialogTitle>Upload CSV</DialogTitle>
-          <DialogDescription>
-            {loading && <div> Loading ... </div>}
+          <DialogTitle className="text-lg font-bold text-gray-800">
+            CSV-Datei hochladen
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-600 mt-1">
+            Überprüfen Sie die Dateiinformationen vor dem Hochladen.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {loading && <div> Loading ... </div>}
-          <div className="flex flex-col">
-            Your uploading the file {filename} to the device {deviceId}.
-          </div>
+          {!boxInAccount ? (
+            <div>
+              <Alert variant="warning">
+                <p>
+                  Die Box mit der ID <strong>{deviceId}</strong> gehört nicht zu
+                  deinem openSenseMap Account. Sie können nur Daten zu Boxen
+                  hochladen, die Ihnen gehören.
+                </p>
+              </Alert>
+            </div>
+          ) : (
+            <></>
+          )}
+          {loading ? (
+            <div className="flex justify-center items-center text-blue-500">
+              Wird geladen...
+            </div>
+          ) : (
+            <FileOverview file={file} />
+          )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="mt-4 flex justify-end space-x-2">
           <Button
-            disabled={deviceId === undefined && token === undefined}
-            onClick={uploadFile}
+            onClick={() => setOpen(false)}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md shadow-md transition-colors"
           >
-            {deviceId === undefined && token === undefined
-              ? "No token"
-              : "Upload"}
+            Abbrechen
+          </Button>
+          <Button
+            disabled={!deviceId || !token || loading || !boxInAccount}
+            onClick={uploadFile}
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-md transition-colors"
+          >
+            {loading ? "Wird hochgeladen..." : "Hochladen"}
           </Button>
         </DialogFooter>
       </DialogContent>
-      {loading ? (
-        <div>
-          <LoadingOverlay></LoadingOverlay>
-        </div>
-      ) : null}
+      {loading && <LoadingOverlay />}
     </Dialog>
   );
 }

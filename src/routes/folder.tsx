@@ -48,7 +48,6 @@ export default function Folder() {
   useEffect(() => {
     const fetchDeviceSecret = async (deviceId: string) => {
       setLoading(true);
-      console.log("token from api");
       const response = await fetch(
         `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
         {
