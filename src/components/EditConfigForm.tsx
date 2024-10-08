@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "./ui/input";
-import { Label } from "./ui/Label";
+import { Label } from "@/components/ui/label";
 import { useBoardStore } from "@/lib/store/board";
 import { Button } from "./ui/button";
 

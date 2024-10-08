@@ -126,7 +126,7 @@ export default function SDCardOverview() {
 
       const deletedFile = await deleteFile(filename);
 
-      checkFilesUploaded(files);
+      checkFilesUploaded(files, config?.sensebox_id ?? "");
     } catch (error: any) {}
   };
 

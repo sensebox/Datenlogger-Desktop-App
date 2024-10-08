@@ -105,6 +105,7 @@ export function FileTable({
               <Badge
                 variant={file ? "default" : "secondary"}
                 className={`flex items-center gap-1 ${getStatusClasses(
+                  // @ts-ignore
                   file.status
                 )}`}
               >

@@ -28,6 +28,7 @@ export const SDCardTableButtonBar = ({
       </Button>
       <UploadAllDialog
         disabled={data.length === 0}
+        //@ts-ignore
         files={data}
         deviceId={config?.sensebox_id}
       />
