@@ -20,6 +20,7 @@ import { deleteFilesFromTable } from "@/lib/helpers/deleteFilesFromTable";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import EditConfigForm from "./EditConfigForm";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 type Device = {
   name: string;
@@ -212,7 +213,8 @@ export default function SDCardOverview() {
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <EditConfigForm />
+                      <DialogTitle></DialogTitle>
+                      <EditConfigForm setConfigModalOpen={setConfigModalOpen} />
                     </DialogContent>
                   </Dialog>
                 </div>

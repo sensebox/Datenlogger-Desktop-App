@@ -1,53 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { Input } from "./ui/input";
-import { Label } from "@/components/ui/label";
 import { useBoardStore } from "@/lib/store/board";
 import { Button } from "./ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { useAuth } from "./auth-provider";
+import { Cpu } from "lucide-react";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
 
-// TypeScript Interface für Senseboxconfig
-type Senseboxconfig = {
-  name: string;
-  sensebox_id: string;
-  ssid?: string;
-  psk?: string;
-  temp_id?: string;
-  humi_id?: string;
-  dist_l_id?: string;
-  dist_r_id?: string;
-  pm10_id?: string;
-  pm25_id?: string;
-  acc_x_id?: string;
-  acc_y_id?: string;
-  acc_z_id?: string;
-  speed_id?: string;
+type EditConfigFormProps = {
+  setConfigModalOpen: (open: boolean) => void;
 };
 
-const EditconfigForm = () => {
+const EditconfigForm = ({ setConfigModalOpen }: EditConfigFormProps) => {
   const { config } = useBoardStore();
+  const { signInResponse } = useAuth();
+  const [boxes, setBoxes] = useState<any[]>([]);
+  const [selectedBox, setSelectedBox] = useState<string>(config?.sensebox_id);
 
   // Beim Mount der Komponente die gespeicherte Konfiguration aus dem Storage abrufen
   useEffect(() => {
     const storedconfig = localStorage.getItem("senseboxconfig");
     if (storedconfig) {
-      //   setconfig(JSON.parse(storedconfig));
+      // setconfig(JSON.parse(storedconfig));
     }
+    const boxes = signInResponse?.data?.user?.boxes;
+    console.log(signInResponse, boxes);
+    setBoxes(boxes);
   }, []);
 
   // Funktion, um die Werte im State zu aktualisieren
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    // setconfig((prevconfig) => ({
-    //   ...prevconfig,
-    //   [name]: value,
-    // }));
+  const handleChange = (e: string) => {
+    setSelectedBox(e);
   };
 
   // Funktion zum Speichern der geänderten Konfiguration
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Die geänderte Konfiguration in den localStorage speichern
-    localStorage.setItem("senseboxconfig", JSON.stringify(config));
-    alert("Konfiguration wurde gespeichert!");
+    console.log(setConfigModalOpen);
+    setConfigModalOpen(false);
   };
 
   return (
@@ -61,193 +58,51 @@ const EditconfigForm = () => {
       </div>
 
       <div className="flex-grow overflow-y-auto bg-white p-3 rounded-lg shadow max-h-80">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {config?.name && config.name.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Name:</Label>
-              <Input
-                type="text"
-                name="name"
-                value={config.name}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-                required
-              />
-            </div>
-          )}
+        <Label> senseBox ID</Label>
 
-          {config?.sensebox_id && config.sensebox_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">
-                Sensebox ID:
-              </Label>
-              <Input
-                type="text"
-                name="sensebox_id"
-                value={config.sensebox_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-                required
-              />
-            </div>
-          )}
+        <Select onValueChange={(e) => handleChange(e)}>
+          <SelectTrigger>
+            <SelectValue>
+              <span className="flex flex-row items-center">
+                <Cpu className="h-5 w-5 p-1" />
+                {selectedBox}
+              </span>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {boxes.map((box: any) => (
+              <SelectItem
+                key={box}
+                value={box}
+                className="hover:bg-green-100 transition flex flex-row"
+              >
+                <div className="flex flex-row">
+                  <Cpu className="h-5 w-5 p-1" />
+                  <span className="">{box}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-          {config?.ssid && config.ssid.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">SSID:</Label>
-              <Input
-                type="text"
-                name="ssid"
-                value={config.ssid}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.psk && config.psk.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">PSK:</Label>
-              <Input
-                type="text"
-                name="psk"
-                value={config.psk}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.temp_id && config.temp_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Temp ID:</Label>
-              <Input
-                type="text"
-                name="temp_id"
-                value={config.temp_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.humi_id && config.humi_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Humi ID:</Label>
-              <Input
-                type="text"
-                name="humi_id"
-                value={config.humi_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.dist_l_id && config.dist_l_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Dist L ID:</Label>
-              <Input
-                type="text"
-                name="dist_l_id"
-                value={config.dist_l_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.dist_r_id && config.dist_r_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Dist R ID:</Label>
-              <Input
-                type="text"
-                name="dist_r_id"
-                value={config.dist_r_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.pm10_id && config.pm10_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">PM10 ID:</Label>
-              <Input
-                type="text"
-                name="pm10_id"
-                value={config.pm10_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.pm25_id && config.pm25_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">PM2.5 ID:</Label>
-              <Input
-                type="text"
-                name="pm25_id"
-                value={config.pm25_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.acc_x_id && config.acc_x_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">ACC X ID:</Label>
-              <Input
-                type="text"
-                name="acc_x_id"
-                value={config.acc_x_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.acc_y_id && config.acc_y_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">ACC Y ID:</Label>
-              <Input
-                type="text"
-                name="acc_y_id"
-                value={config.acc_y_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.acc_z_id && config.acc_z_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">ACC Z ID:</Label>
-              <Input
-                type="text"
-                name="acc_z_id"
-                value={config.acc_z_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-
-          {config?.speed_id && config.speed_id.trim() !== "" && (
-            <div>
-              <Label className="block text-sm text-green-600">Speed ID:</Label>
-              <Input
-                type="text"
-                name="speed_id"
-                value={config.speed_id}
-                onChange={handleChange}
-                className="mt-1 p-1 w-full border border-green-300 rounded text-sm"
-              />
-            </div>
-          )}
-        </form>
+      <div>
+        <div className="flex flex-row gap-4">
+          <div>
+            <Label> Name</Label>
+            <Input disabled={true} value={config?.temp_id} />
+          </div>
+        </div>
+        <div className="flex flex-row gap-4">
+          <div>
+            <Label> TemperatursensorID</Label>
+            <Input disabled={true} value={config?.temp_id} />
+          </div>
+          <div>
+            <Label> Humi Sensor ID</Label>
+            <Input disabled={true} value={config?.temp_id} />
+          </div>
+        </div>
       </div>
 
       <Button

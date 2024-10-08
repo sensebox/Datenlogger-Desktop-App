@@ -69,7 +69,6 @@ export function FileTable({
           <TableHead className="text-green-800">Datei</TableHead>
           <TableHead className="text-green-800">Größe</TableHead>
           <TableHead className="text-green-800">Status</TableHead>
-          <TableHead className="text-green-800">Checksum</TableHead>
           <TableHead className="text-green-800">Aktionen</TableHead>
         </TableRow>
       </TableHeader>
@@ -133,9 +132,7 @@ export function FileTable({
                 )}
               </Badge>
             </TableCell>
-            <TableCell>
-              <span className="text-gray-600">{file.checksum}</span>
-            </TableCell>
+
             <TableCell>
               <div className="flex justify-center gap-2">
                 <Button
