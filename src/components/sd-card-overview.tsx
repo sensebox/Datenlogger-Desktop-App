@@ -1,46 +1,25 @@
-import { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useState } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  File,
-  FileAudio,
-  FileVideo,
-  FileText,
-  Upload,
-  CheckCircle2,
-  Smartphone,
-  SmartphoneIcon,
-  DownloadIcon,
-  CloudIcon,
-  TrashIcon,
-  Trash,
-  UserIcon,
-} from "lucide-react";
+import { Smartphone, Folder, SettingsIcon } from "lucide-react";
 import { useBoardStore } from "@/lib/store/board";
 import { useFileStore } from "@/lib/store/files";
 import { FileContent, FileStats } from "@/types";
 import { Button } from "./ui/button";
-import { readDirectory, deleteFile, readCSVFile } from "@/lib/fs";
+import { deleteFile } from "@/lib/fs";
 import { invoke } from "@tauri-apps/api/tauri";
 import { toast } from "./ui/use-toast";
 import BoardSwitcher from "./board-switcher";
-import { UploadDialog } from "./upload-dialog";
-import { UploadAllDialog } from "./upload-all-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { useAuth } from "./auth-provider";
 import { UserNav } from "./user-nav";
 import { FileTable } from "./sd-card-table";
 import { SDCardTableButtonBar } from "./sd-card-table-button-bar";
 import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 import { deleteFilesFromTable } from "@/lib/helpers/deleteFilesFromTable";
+import { Link } from "react-router-dom";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import EditConfigForm from "./EditConfigForm";
 
 type Device = {
   name: string;
@@ -50,6 +29,7 @@ type Device = {
 export default function SDCardOverview() {
   const { config, serialPort } = useBoardStore();
   const { files, setFiles } = useFileStore();
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const { signInResponse } = useAuth();
 
   const syncFiles = async () => {
@@ -121,6 +101,21 @@ export default function SDCardOverview() {
       });
     }
   };
+
+  const openFolderInExplorer = async () => {
+    try {
+      await invoke("open_in_explorer", {
+        deviceid: config?.sensebox_id,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        description: `Fehler beim Öffnen des Ordners, hast du schon Daten diese Box runtergeladen?`,
+        duration: 3000,
+      });
+    }
+  };
+
   const uploadFile = async (filename: string) => {
     if (!filename) return;
   };
@@ -138,7 +133,7 @@ export default function SDCardOverview() {
   const downloadAllFiles = async () => {
     try {
       for (let index = 0; index < files.length; index++) {
-        const file = data[index];
+        const file = files[index];
         if (file.status === "synced" || file.status === "uploaded") return;
         if (file.filename) await downloadFile(file.filename);
       }
@@ -165,7 +160,6 @@ export default function SDCardOverview() {
       const uploadedFiles: any = await invoke("reset_data", {
         device: config?.sensebox_id,
       });
-      console.log(uploadedFiles);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -184,6 +178,7 @@ export default function SDCardOverview() {
               <Smartphone className="w-5 h-5" />
               Geräteinformationen
             </h2>
+
             <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm border-blue-100 border-solid border-2  ">
               <UserNav />
             </div>
@@ -192,11 +187,38 @@ export default function SDCardOverview() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-blue-600">Gerätename</p>
+
               <p className="text-lg text-blue-900">{config?.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-blue-600">senseBox-ID</p>
-              <p className="text-lg text-blue-900">{config?.sensebox_id} </p>
+              {config?.sensebox_id ? (
+                <div className=" flex flex-row gap-2 text-lg text-blue-900 justify-between">
+                  <span className="">{config?.sensebox_id} </span>
+                  <Button
+                    variant={"ghost"}
+                    size={"icon"}
+                    onClick={() => openFolderInExplorer()}
+                  >
+                    <Folder className="w-5 h-5 text-blue-500" />
+                  </Button>
+                  <Dialog
+                    open={configModalOpen}
+                    onOpenChange={() => setConfigModalOpen(!configModalOpen)}
+                  >
+                    <DialogTrigger>
+                      <Button size={"icon"} variant={"ghost"}>
+                        <SettingsIcon className="w-5 h-5 text-blue-500" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <EditConfigForm />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              ) : (
+                <></>
+              )}
             </div>
           </div>
           <div className="flex flex-row justify-between mt-4">

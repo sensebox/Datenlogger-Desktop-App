@@ -21,6 +21,8 @@ import { useAuth } from "./auth-provider";
 import { useFileStore } from "@/lib/store/files";
 import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 import { createChecksum } from "@/lib/helpers/createChecksum";
+import { User } from "@/types";
+import { Alert } from "./ui/alert";
 
 type UploadDialogProps = {
   filename: string;
@@ -43,6 +45,7 @@ export function UploadDialog({
 
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [boxInAccount, setBoxInAccount] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
   const { signInResponse } = useAuth();
   const [file, setFile] = useState<FileStats>({
@@ -67,6 +70,12 @@ export function UploadDialog({
 
       // @ts-ignore
       setFile({ lines, firstDate, lastDate, deviceId: deviceId, filename });
+      // check if the account also owns the box
+      const loginResponse: any = storage.get("auth");
+      const boxes = loginResponse.data.user.boxes;
+      if (boxes.includes(deviceId)) {
+        setBoxInAccount(true);
+      }
     };
 
     if (open) getFileStats();
@@ -136,22 +145,35 @@ export function UploadDialog({
           disabled={!signInResponse || disabled}
         >
           <UploadCloud className="w-4 h-4 mr-2" />
-          Upload
+          Hochladen
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold text-gray-800">
-            Upload CSV File
+            CSV-Datei hochladen
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600 mt-1">
-            Review the file information before uploading.
+            Überprüfen Sie die Dateiinformationen vor dem Hochladen.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {!boxInAccount ? (
+            <div>
+              <Alert variant="warning">
+                <p>
+                  Die Box mit der ID <strong>{deviceId}</strong> gehört nicht zu
+                  deinem openSenseMap Account. Sie können nur Daten zu Boxen
+                  hochladen, die Ihnen gehören.
+                </p>
+              </Alert>
+            </div>
+          ) : (
+            <></>
+          )}
           {loading ? (
             <div className="flex justify-center items-center text-blue-500">
-              Loading...
+              Wird geladen...
             </div>
           ) : (
             <FileOverview file={file} />
@@ -162,14 +184,14 @@ export function UploadDialog({
             onClick={() => setOpen(false)}
             className="bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md shadow-md transition-colors"
           >
-            Cancel
+            Abbrechen
           </Button>
           <Button
-            disabled={!deviceId || !token || loading}
+            disabled={!deviceId || !token || loading || !boxInAccount}
             onClick={uploadFile}
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-md transition-colors"
           >
-            {loading ? "Uploading..." : "Upload"}
+            {loading ? "Wird hochgeladen..." : "Hochladen"}
           </Button>
         </DialogFooter>
       </DialogContent>

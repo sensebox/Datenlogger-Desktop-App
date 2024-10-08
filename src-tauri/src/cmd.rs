@@ -13,7 +13,8 @@ use std::process::Command;
 use std::{env, path};
 use tauri::command;
 use serial2_tokio::SerialPort;
-use tokio::time::{timeout, Duration as TokioDuration, Instant};
+use tokio::time::{timeout, Duration as TokioDuration};
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
 pub struct File {
@@ -22,12 +23,22 @@ pub struct File {
     pub checksum: String,
 }
 
+
+
+
 #[command]
 pub fn list_serialport_devices() -> Vec<SerialPorts> {
     println!("Serialport devices");
     let mut serial_ports: Vec<SerialPorts> = Vec::new();
     let ports = serialport::available_ports().expect("No ports found!");
+
     for p in ports {
+        // Ignoriere Ports auf macOS, deren Portname mit /dev/tty beginnt
+        if cfg!(target_os = "macos") && p.port_name.starts_with("/dev/tty") {
+            println!("Ignoring port: {}", p.port_name);
+            continue;
+        }
+
         println!("Name: {}", p.port_name);
 
         match p.port_type {
@@ -46,9 +57,8 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
                     "   Product: {}",
                     info.product.as_ref().map_or("", String::as_str)
                 );
-                let a = info.product.as_ref().map_or("", String::as_str);
-                let b = "senseBox MCU";
-
+                
+                // Falls es sich um eine senseBox handelt, füge spezielle Infos hinzu
                 if (info.vid == 0x04d8 && info.pid == 0xef67) {
                     serial_ports.push(SerialPorts::new(
                         p.port_name,
@@ -64,22 +74,22 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
                         info.product.unwrap_or("".to_owned()),
                     ));
                 }
-                // }
             }
             SerialPortType::BluetoothPort => {
-                // println!("    Type: Bluetooth");
+                // Ignoriere Bluetooth Ports (optional)
             }
             SerialPortType::PciPort => {
-                // println!("    Type: PCI");
+                // Ignoriere PCI Ports (optional)
             }
             SerialPortType::Unknown => {
-                // println!("    Type: Unknown");
+                // Ignoriere unbekannte Ports (optional)
             }
         }
     }
 
     serial_ports.into()
 }
+
 
 
 
@@ -125,8 +135,14 @@ async fn send_command_and_read_response(port_name: &str, command: &str) -> Resul
 
 #[tauri::command]
 pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, String> {
-    // Öffne den seriellen Port asynchron
-    let collected_data = send_command_and_read_response(port, command).await?;
+    // Setze ein Timeout von 3 Sekunden für die Rückmeldung
+    let timeout_duration = Duration::from_secs(3);
+
+    // Führe den seriellen Befehl mit Timeout aus
+    let collected_data = match timeout(timeout_duration, send_command_and_read_response(port, command)).await {
+        Ok(result) => result?,
+        Err(_) => return Err("Fehler: Keine Rückmeldung vom Gerät, Connect Sketch hochgeladen?".to_string()),
+    };
 
     println!("Result: {}", collected_data);
 
@@ -172,7 +188,6 @@ pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxCo
     
     std::fs::create_dir(&app_dir);
 
-    // let app_dir = app_handle.path_resolver().app_data_dir().unwrap();
     let file_path = format!("config.cfg");
     let app_str = app_dir.to_str().unwrap();
     let realpath = format!("{}/{}", app_str, file_path);
@@ -189,6 +204,7 @@ pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxCo
 
     Ok(config)
 }
+
 #[command]
 pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
     // Open port
@@ -354,31 +370,45 @@ pub fn reset_data() {
 }
 
 #[tauri::command]
-pub fn open_in_explorer() {
+pub fn open_in_explorer(deviceid: String) -> Result<(), String> {
     // Überprüfen, welches Betriebssystem ausgeführt wird
-
     let app_dir = path::Path::new(&tauri::api::path::home_dir().unwrap())
         .join(".reedu")
-        .join("data");
+        .join("data")
+        .join(deviceid);
+
+    // Überprüfe, ob der Ordner existiert
+    if !app_dir.exists() {
+        return Err(format!(
+            "Fehler: Der Ordner {} ist nicht vorhanden.",
+            app_dir.display()
+        ));
+    }
 
     print!("Running on ");
     if cfg!(target_os = "linux") {
         println!("Linux");
+        Command::new("xdg-open")
+            .arg(app_dir)
+            .spawn()
+            .map_err(|e| format!("Fehler beim Öffnen des Ordners: {}", e))?;
     } else if cfg!(target_os = "windows") {
         println!("Windows");
         // Windows
         Command::new("explorer")
-            .args([app_dir]) // The comma after select is not a typo
+            .arg(app_dir)
             .spawn()
-            .unwrap();
+            .map_err(|e| format!("Fehler beim Öffnen des Ordners: {}", e))?;
     } else if cfg!(target_os = "macos") {
-        Command::new("open")
-            .args([app_dir]) // i don't have a mac so not 100% sure
-            .spawn()
-            .unwrap();
-
         println!("Mac OS");
+        Command::new("open")
+            .arg(app_dir)
+            .spawn()
+            .map_err(|e| format!("Fehler beim Öffnen des Ordners: {}", e))?;
     } else {
         println!("Other");
+        return Err("Unbekanntes Betriebssystem.".to_string());
     }
+
+    Ok(())
 }

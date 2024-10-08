@@ -27,10 +27,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
     const password = target.password.value;
 
     await onLogin(email, password);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+    setIsLoading(false);
   }
 
   return (

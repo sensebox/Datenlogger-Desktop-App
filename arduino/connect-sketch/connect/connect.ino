@@ -154,6 +154,8 @@ void executeCommand() {
     case 4:
       deleteFile(cmdMsg);
       break;
+    case 5: 
+      writeFile("config.cfg", cmdMsg);
     default:
       break;
   }
@@ -347,6 +349,27 @@ void printFileContent(const char* filename) {
 //     free(md5str);
 //     free(hash);
 // }
+
+void writeFile(const char* fileName, const char* fileContent) {
+    // Check if the file already exists, and if so, overwrite it
+    Serial.print(fileContent);
+    File file = SD.open(fileName, FILE_WRITE);
+
+    if (file) {
+        Serial.print("Writing to ");
+        Serial.println(fileName);
+
+        // Write the content to the file
+        file.print(fileContent);
+
+        // Close the file
+        file.close();
+        Serial.println("File written successfully.");
+    } else {
+        Serial.println("Error opening the file for writing.");
+    }
+}
+
 
 void deleteFile(const char* fileName) {
   if (SD.exists(fileName)) {

@@ -138,7 +138,6 @@ export function FileTable({
               <div className="flex justify-center gap-2">
                 <Button
                   onClick={() => downloadFile(file.filename ?? "")}
-                  disabled={file.status === "synced"}
                   size="sm"
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                 >

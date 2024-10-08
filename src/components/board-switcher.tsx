@@ -54,9 +54,25 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
   const [loading, setLoading] = React.useState(false);
 
   const [folders, setFolders] = React.useState<any[]>([]);
+
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
   }
+
+  React.useEffect(() => {
+    readDir();
+  }, []);
+
+  const readDir = async () => {
+    const files = await readDirectory(`.reedu/data/`);
+    const mappedFiles: File[] = [];
+    // exclude all hidden folders
+    const filteredFiles = files.filter(
+      (file) => file.name && !file.name.startsWith(".")
+    );
+
+    setFolders(filteredFiles);
+  };
 
   async function connectAndReadConfig(serialPort: SerialPort) {
     try {
@@ -121,6 +137,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
     const config = await readCSVFile(`.reedu/data/${id}/config.cfg`);
     const boardConfig: SenseboxConfig = readConfig(config);
     setOpen(false);
+    setSelectedBoard(null);
     setConfig(boardConfig);
   };
 
@@ -176,7 +193,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
           <Command>
             <CommandList>
               <CommandEmpty>No device found.</CommandEmpty>
-              <CommandGroup key="devices" heading="Devices">
+              <CommandGroup key="devices" heading="Geräte">
                 {serialPorts?.map((serialPort, idx) => (
                   <CommandItem
                     key={idx}
@@ -205,7 +222,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
             </CommandList>
             <CommandSeparator />
             <CommandList>
-              <CommandGroup key="folders" heading="Folders">
+              <CommandGroup key="folders" heading="Runtergeladene Ordner">
                 {folders.map((folder, idx) => (
                   <CommandItem
                     key={idx}

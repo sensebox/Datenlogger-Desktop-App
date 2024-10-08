@@ -43,6 +43,8 @@ export function UploadAllDialog({
   const [token, setToken] = useState<string>("");
   const [uploadCount, setUploadCount] = useState<number>(0);
   const [data, setData] = useState<FileStats[]>([]);
+  const [boxInAccount, setBoxInAccount] = useState<boolean>(false);
+
   const { files } = useFileStore();
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
@@ -73,6 +75,11 @@ export function UploadAllDialog({
     };
 
     getFileStats();
+    const loginResponse: any = storage.get("auth");
+    const boxes = loginResponse.data.user.boxes;
+    if (boxes.includes(deviceId)) {
+      setBoxInAccount(true);
+    }
   }, []);
 
   const initiateUploadAll = async () => {
@@ -185,6 +192,19 @@ export function UploadAllDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="">
+          {!boxInAccount ? (
+            <div>
+              <Alert variant="warning">
+                <p>
+                  Die Box mit der ID <strong>{deviceId}</strong> gehört nicht zu
+                  deinem openSenseMap Account. Du kannst nur Daten an eine Box
+                  hochladen, die auf deinem Account registriert ist.
+                </p>
+              </Alert>
+            </div>
+          ) : (
+            <></>
+          )}
           {loading ? (
             <div className="flex justify-center items-center text-blue-500">
               <p>
