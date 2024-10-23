@@ -60,6 +60,10 @@ export function UploadDialog({
   }, [deviceId]);
 
   useEffect(() => {
+    console.log(deviceId, token);
+  }, [open]);
+
+  useEffect(() => {
     // Simulate reading file stats (line count, first date)
     const getFileStats = async () => {
       const csvContent = await readCSVFile(
@@ -188,7 +192,7 @@ export function UploadDialog({
             Abbrechen
           </Button>
           <Button
-            disabled={!deviceId || !token || loading || !boxInAccount}
+            disabled={!deviceId || !boxInAccount}
             onClick={uploadFile}
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-md transition-colors"
           >
