@@ -76,6 +76,7 @@ export function UploadAllDialog({
 
     getFileStats();
     const loginResponse: any = storage.get("auth");
+    if (!loginResponse) return;
     const boxes = loginResponse.data.user.boxes;
     if (boxes.includes(deviceId)) {
       setBoxInAccount(true);
