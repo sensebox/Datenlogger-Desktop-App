@@ -150,6 +150,7 @@ export function FileTable({
                 <Button
                   onClick={() => deleteFile(file.filename ?? "")}
                   variant="destructive"
+                  disabled={true}
                   size="sm"
                   className="bg-red-500 hover:bg-red-600 text-white"
                 >

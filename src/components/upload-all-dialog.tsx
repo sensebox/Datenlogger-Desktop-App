@@ -81,7 +81,7 @@ export function UploadAllDialog({
     if (boxes.includes(deviceId)) {
       setBoxInAccount(true);
     }
-  }, []);
+  }, [files]);
 
   const initiateUploadAll = async () => {
     try {
@@ -245,7 +245,7 @@ export function UploadAllDialog({
             Cancel
           </Button>
           <Button
-            disabled={!deviceId || !token || loading}
+            disabled={!deviceId || loading}
             onClick={() => initiateUploadAll()}
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-md transition-colors"
           >

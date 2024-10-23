@@ -34,7 +34,7 @@ export const SDCardTableButtonBar = ({
       />
       <Button
         onClick={() => deleteAllFiles()}
-        disabled={data.length === 0}
+        disabled={true}
         variant={"destructive"}
       >
         <Trash className="mr-2 h-4 w-4  text-white" />
