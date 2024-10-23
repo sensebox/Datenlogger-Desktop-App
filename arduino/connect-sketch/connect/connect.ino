@@ -161,6 +161,8 @@ void executeCommand() {
   }
 }
 
+
+
 SdFile getParentDir(const char *filepath, int *index) {
     // get parent directory
     SdFile d1;

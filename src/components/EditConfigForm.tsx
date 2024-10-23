@@ -23,7 +23,9 @@ const EditconfigForm = ({ setConfigModalOpen }: EditConfigFormProps) => {
   const { config } = useBoardStore();
   const { signInResponse } = useAuth();
   const [boxes, setBoxes] = useState<any[]>([]);
-  const [selectedBox, setSelectedBox] = useState<string>(config?.sensebox_id);
+  const [selectedBox, setSelectedBox] = useState<string>(
+    config?.sensebox_id ?? ""
+  );
 
   // Beim Mount der Komponente die gespeicherte Konfiguration aus dem Storage abrufen
   useEffect(() => {
@@ -31,8 +33,7 @@ const EditconfigForm = ({ setConfigModalOpen }: EditConfigFormProps) => {
     if (storedconfig) {
       // setconfig(JSON.parse(storedconfig));
     }
-    const boxes = signInResponse?.data?.user?.boxes;
-    console.log(signInResponse, boxes);
+    const boxes = signInResponse?.data?.user?.boxes ?? [];
     setBoxes(boxes);
   }, []);
 
