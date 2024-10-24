@@ -111,7 +111,7 @@ export default function SDCardOverview() {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        description: `Fehler beim Öffnen des Ordners, hast du schon Daten diese Box runtergeladen?`,
+        description: `Fehler beim Öffnen des Ordners, hast du schon Daten dieser Box runtergeladen?`,
         duration: 3000,
       });
     }
