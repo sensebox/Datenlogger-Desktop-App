@@ -39,6 +39,7 @@ export default function SDCardOverview() {
         port: serialPort?.port,
         command: "<1 root>",
       });
+      console.log(filesFromBoard)
       setFiles(filesFromBoard);
       if (files.length === 0) {
         if (config?.sensebox_id) {
@@ -244,6 +245,7 @@ export default function SDCardOverview() {
           syncFiles={syncFiles}
           downloadFile={downloadFile}
           deleteFile={deleteFile}
+          port={serialPort?.port ?? ''} 
         />
       </CardContent>
     </Card>
