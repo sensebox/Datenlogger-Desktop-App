@@ -30,6 +30,7 @@ import { UploadDialog } from "./upload-dialog";
 import { useFileStore } from "@/lib/store/files";
 import { invoke } from "@tauri-apps/api";
 import { deleteFile } from "@/lib/fs";
+import { toast } from "./ui/use-toast";
 
 type FileTableProps = {
   data: Array<any>;
@@ -100,10 +101,20 @@ export function FileTable({
         });
         console.log("Geräte Löschung:", deleted);
       }
+      toast({
+        variant: "success",
+        description: `Datei ${selectedFile.filename} erfolgreich gelöscht. Board neu laden um Änderungen zu sehen.`,
+        duration: 3000,
+      });
+
     } catch (error) {
+      toast({
+        variant: "destructive",
+        description: `Fehler beim Löschen der Datei: ${error}`,
+        duration: 3000,
+      });
       console.error("Fehler beim Löschen:", error);
     } finally {
-      syncFiles();
       setIsLoading(false);
       setDeleteModalOpen(false);
       setSelectedFile(null);
