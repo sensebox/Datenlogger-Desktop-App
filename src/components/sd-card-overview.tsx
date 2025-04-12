@@ -244,8 +244,8 @@ export default function SDCardOverview() {
           config={config}
           syncFiles={syncFiles}
           downloadFile={downloadFile}
-          deleteFile={deleteFile}
-          port={serialPort?.port ?? ''} 
+          // deleteFile={deleteFile}
+          port={serialPort?.port.toString() ?? ''} 
         />
       </CardContent>
     </Card>
