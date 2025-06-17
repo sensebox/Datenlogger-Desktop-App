@@ -70,7 +70,7 @@ export function FileTable({
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "synced":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 ";
       default:
         return "bg-red-100 text-red-800";
     }
@@ -163,7 +163,7 @@ export function FileTable({
               </TableCell>
               <TableCell>
                 <span
-                  className={`flex items-center gap-1 ${getStatusClasses(
+                  className={`flex items-center gap-1 rounded-md p-0.5 ${getStatusClasses(
                     file.status ?? "unknown"
                   )}`}
                 >

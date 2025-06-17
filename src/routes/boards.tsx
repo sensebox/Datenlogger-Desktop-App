@@ -14,7 +14,6 @@ import {
   TrashIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { DataTable } from "@/components/data-table";
 import { File, getColumns } from "@/lib/columns/files";
 import { useToast } from "@/components/ui/use-toast";
 import { readDirectory } from "@/lib/fs";
@@ -44,7 +43,6 @@ export default function Boards() {
   return (
     <div className="">
       <SDCardOverview />
-      {/* <DataTable columns={columns} data={data} /> */}
       {loading && <LoadingOverlay />}
     </div>
   );
