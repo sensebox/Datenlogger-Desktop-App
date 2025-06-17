@@ -129,9 +129,35 @@ async fn send_command_and_read_response(port_name: &str, command: &str) -> Resul
             }
         }
     }
-    Ok(collected_data)
+    return Ok(collected_data)
 }
 
+
+async fn send_command_and_read_response2(
+    port_name: &str,
+    command: &str,
+) -> Result<String, String> {
+    let mut port = SerialPort::open(port_name, 9600)
+        .map_err(|e| e.to_string())?;
+    port.write_all(command.as_bytes()).await
+        .map_err(|e| e.to_string())?;
+
+    let mut buffer = [0; 256];
+    let mut collected = String::new();
+
+    loop {
+        match timeout(Duration::from_secs(1), port.read(&mut buffer)).await {
+            Ok(Ok(0)) => break, // EOF
+            Ok(Ok(n)) => {
+                collected.push_str(&String::from_utf8_lossy(&buffer[..n]));
+            }
+            Ok(Err(e)) => return Err(e.to_string()),
+            Err(_) => break,     // nach 1 s keine neuen Daten → Ende
+        }
+    }
+
+    Ok(collected)
+}
 
 #[tauri::command]
 pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxConfig, String> {
@@ -270,6 +296,17 @@ pub fn delete_file(port: &str, command: &str) -> Result<String, String> {
     // println!("result: {}", buffer);
 
     Ok(buffer)
+}
+
+#[command]
+pub async fn delete_file_async(
+    port: &str,
+    command: &str,
+) -> Result<String, String> {
+    // keinen externen Timeout mehr nötig
+    let data = send_command_and_read_response2(port, command).await?;
+    // hier kannst du bei Bedarf noch auf "OK" prüfen oder den vollen String zurückgeben
+    Ok(data)
 }
 
 #[command]

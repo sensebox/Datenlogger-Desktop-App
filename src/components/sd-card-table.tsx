@@ -31,6 +31,9 @@ import { useFileStore } from "@/lib/store/files";
 import { invoke } from "@tauri-apps/api";
 import { deleteFile } from "@/lib/fs";
 import { toast } from "./ui/use-toast";
+import { FileStats } from "@/types";
+import { useBoardStore } from "@/lib/store/board";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 
 type FileTableProps = {
   data: Array<any>;
@@ -46,12 +49,13 @@ export function FileTable({
   downloadFile,
   port,
 }: FileTableProps) {
-  const { files } = useFileStore();
-
+  const { files, setFiles} = useFileStore();
+  const { serialPort  } = useBoardStore();
   // Zustand, um das Modal, den aktuell ausgewählten Datensatz und den Ladezustand zu steuern
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
 
   const formatBytes = (bytes: any) => {
     if (bytes === 0) return "0 Bytes";
@@ -87,7 +91,7 @@ export function FileTable({
     setIsLoading(true);
     try {
       if (mode === "all") {
-        const deleted = await invoke("delete_file", {
+        const deleted = await invoke("delete_file_async", {
           port: port ? port : null,
           command: `<4 ${selectedFile.filename}>`,
         });
@@ -95,15 +99,26 @@ export function FileTable({
         const deleteLocal = await deleteFile(`.reedu/data/${config?.sensebox_id}/${selectedFile.filename}`);
         
       } else if (mode === "device") {
-        const deleted = await invoke("delete_file", {
+        const deleted = await invoke("delete_file_async", {
           port: port ? port : null,
           command: `<4 ${selectedFile.filename}>`,
         });
         console.log("Geräte Löschung:", deleted);
       }
+
+      // Aktualisiere die Dateiliste, indem die gelöschte Datei entfernt wird
+      const files: FileStats[] = await invoke("connect_list_files", {
+        port: serialPort?.port,
+        command: "<1 root>",
+      });
+      const checkedFiles = await checkFilesUploaded(
+        files,
+        config?.sensebox_id || ""
+      );
+      setFiles(checkedFiles);
       toast({
         variant: "success",
-        description: `Datei ${selectedFile.filename} erfolgreich gelöscht. Board neu laden um Änderungen zu sehen.`,
+        description: `Datei ${selectedFile.filename} erfolgreich gelöscht.`,
         duration: 3000,
       });
 
@@ -243,7 +258,7 @@ export function FileTable({
             </Button>
             <Button
               onClick={() => handleDeleteConfirmation("all")}
-              disabled={isLoading}
+              disabled={isLoading || selectedFile?.status !== "synced"}
               variant="destructive"
             >
               Gerät &amp; PC

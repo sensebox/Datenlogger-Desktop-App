@@ -38,6 +38,7 @@ fn main() {
             cmd::connect_read_config,
             cmd::connect_list_files,
             cmd::delete_file,
+            cmd::delete_file_async,
             cmd::save_data_to_file,
             cmd::get_file_content,
             cmd::get_data,
