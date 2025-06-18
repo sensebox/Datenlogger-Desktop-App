@@ -1,106 +1,100 @@
-import { LogIn, LogOut, Settings, User, UserIcon } from "lucide-react";
+import {
+  LogIn,
+  LogOut,
+  Settings,
+} from "lucide-react"
+import * as React from "react"
+import { Link } from "react-router-dom"
 
-import { Avatar, AvatarFallback } from "./ui/avatar";
-import { Button, buttonVariants } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Button } from "./ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { useAuth } from "./auth-provider";
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { AvatarImage } from "@radix-ui/react-avatar";
-import osmLogo from "@/assets/favicon.svg";
+} from "./ui/dropdown-menu"
+import { useAuth } from "./auth-provider"
+import { cn } from "@/lib/utils"
+import osmLogo from "@/assets/favicon.svg"
 
-const getInitials = function (string: string) {
-  if (!string) return "";
-  var names = string.split(" "),
-    initials = names[0].substring(0, 1).toUpperCase();
-
-  if (names.length > 1) {
-    initials += names[names.length - 1].substring(0, 1).toUpperCase();
-  }
-  return initials;
-};
+const getInitials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
 
 export function UserNav() {
-  const { signInResponse, onLogout } = useAuth();
+  const { signInResponse, onLogout } = useAuth()
+  const user = signInResponse?.data.user
 
+  // Nicht eingeloggt → Login-Link
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className={cn(
+          "flex items-center gap-2",
+          "bg-gradient-to-r from-blue-500 to-blue-700 text-white",
+          "shadow-lg rounded-full px-4 py-2",
+          "hover:scale-105 transform transition"
+        )}
+      >
+        <LogIn className="w-5 h-5" />
+        Login
+      </Link>
+    )
+  }
+
+  // Eingeloggt → Dropdown mit Avatar + Name/Email
   return (
-    <>
-      {signInResponse !== undefined ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost">
-              <Avatar className="w-12 h-12">
-                <AvatarImage src={osmLogo} />
-                <AvatarFallback className="bg-blue-200 text-blue-500">
-                  {getInitials(signInResponse.data.user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-start p-1">
-                <p className="text-sm font-medium text-blue-600">
-                  {signInResponse?.data?.user?.name}{" "}
-                </p>
-                <p className="text-sm font-medium text-blue-600">
-                  {signInResponse?.data?.user?.email}{" "}
-                </p>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">
-                  {signInResponse.data.user.name}
-                </p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {signInResponse.data.user.email}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {/* <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </DropdownMenuGroup> */}
-            {signInResponse !== null && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                  <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : (
-        <Link
-          to="/login"
-          className={cn(
-            "flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-700 text-white shadow-lg rounded-full px-6 py-3 transition-transform transform hover:scale-105 hover:shadow-xl"
-          )}
-        >
-          <LogIn className="w-5 h-5" />
-          Login
-        </Link>
-      )}
-    </>
-  );
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-2">
+          <Avatar className="w-10 h-10">
+            {/* Versuche erst das echte Bild, fallback auf Initialen */}
+            <AvatarFallback className="bg-blue-200 text-blue-600">
+              {getInitials(user.name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col text-left">
+            <span className="text-sm font-medium text-blue-600">
+              {user.name}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {user.email}
+            </span>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent className="w-48" align="end" forceMount>
+        <DropdownMenuLabel className="px-4 py-2">
+          <div className="flex flex-col">
+            <span className="font-medium">{user.name}</span>
+            <span className="text-xs text-muted-foreground">{user.email}</span>
+          </div>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild>
+          <Link to="/settings" className="flex items-center">
+            <Settings className="mr-2 h-4 w-4" />
+            Einstellungen
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={onLogout} className="flex items-center">
+          <LogOut className="mr-2 h-4 w-4" />
+          Abmelden
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 }

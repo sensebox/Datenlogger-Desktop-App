@@ -45,6 +45,7 @@ fn main() {
             cmd::insert_data,
             cmd::open_in_explorer,    
             cmd::reset_data,
+            cmd::write_file,
             serialPortAsync::read_serialport,   
             serialPortAsync::write_and_read_serialport,
         ])

@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Smartphone, Folder, SettingsIcon, BoxesIcon, SaveIcon, HelpCircleIcon } from "lucide-react";
+import { Smartphone, Folder, SettingsIcon, BoxesIcon, SaveIcon, HelpCircleIcon, Car, User } from "lucide-react";
 import { useBoardStore } from "@/lib/store/board";
 import { useFileStore } from "@/lib/store/files";
 import { FileContent, FileStats } from "@/types";
@@ -151,66 +151,38 @@ export default function SDCardOverview() {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-white  rounded-lg overflow-hidden">
+    <Card className="w-full max-w-4xl mx-auto bg-white p-1  rounded-lg overflow-hidden">
+            <CardHeader className="bg-grey-200 border-b border-blue-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SaveIcon className="w-5 h-5 text-blue-600" />
+            <CardTitle className="font-normal">senseBox SD-Karte Übersicht</CardTitle>
+          </div>
+          <UserNav />
+        </div>
+      </CardHeader>
+
+
       <CardContent className="p-4">
         <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-          <div className="flex flex-row justify-between align-middle">
-            <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <SaveIcon className="w-5 h-5" />
-              senseBox SD-Karte Übersicht
-              
-            </h2>
 
-            <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm ">
-              <UserNav />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium">Gerätename</p>
-
-              <p className="text-lg text-blue-500">{config?.name}</p>
-            </div>
-            <div className="flex flex-row gap-2">
-              {config?.sensebox_id ? (
-                <div className=" text-lg  justify-between">
-                  <span className="">{config?.sensebox_id} </span>
-                  <Button
-                    variant={"ghost"}
-                    size={"icon"}
-                    onClick={() => openFolderInExplorer()}
-                  >
-                    <Folder className="w-5 h-5 " />
-                  </Button>
-                  {/* <Dialog
-                    open={configModalOpen}
-                    onOpenChange={() => setConfigModalOpen(!configModalOpen)}
-                  >
-                    <DialogTrigger disabled={true} >
-                      <Button disabled={true} size={"icon"} variant={"ghost"}>
-                        <SettingsIcon className="w-5 h-5 " />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogTitle></DialogTitle>
-                      <EditConfigForm setConfigModalOpen={setConfigModalOpen} />
-                    </DialogContent>
-                  </Dialog> */}
-                
-                </div>
-              ) : (
-                <></>
-              )}
-
-            </div>
-          </div>
-          <div className="flex flex-row justify-between mt-4">
-            <div>
-              <p className="text-sm font-medium  mb-2">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="flex flex-col gap-2">
+              <div>
+              <p className="text-sm font-medium">
                 Gerät auswählen
               </p>
               <BoardSwitcher />
+            </div>
+              <p className="text-sm font-medium">Gerätename</p>
+
+              <p className="text-lg text-blue-500">{config?.name}</p>
+                            <p className="text-sm font-medium">senseBox-ID</p>
+
+              <p className="text-lg text-blue-500">{config?.sensebox_id}</p>
+
+
             </div>
             <SDCardTableButtonBar
               data={files}
@@ -218,6 +190,11 @@ export default function SDCardOverview() {
               downloadAllFiles={downloadAllFiles}
               deleteAllFiles={deleteAllFiles}
             />
+      
+          </div>
+          <div className="flex flex-row justify-between mt-4">
+
+
           </div>
         </div>
         <FileTable
@@ -232,3 +209,5 @@ export default function SDCardOverview() {
     </Card>
   );
 }
+
+

@@ -55,6 +55,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
 
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
+
   }
 
   React.useEffect(() => {
@@ -78,6 +79,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       if (!serialPort) {
         throw new Error("No serial port selected.");
       }
+          setSerialPort(serialPort);
       const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
         port: serialPort.port,
         command: "<3 config>",
@@ -96,7 +98,6 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
 
       toast.success("Verbindung erfolgreich hergestellt.")
       setConfig(boardConfig);
-      setSerialPort(serialPort);
       setLoading(false);
     } catch (error: any) {
       setLoading(false);

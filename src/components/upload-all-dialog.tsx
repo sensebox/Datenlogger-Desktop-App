@@ -169,10 +169,10 @@ export function UploadAllDialog({
       <DialogTrigger asChild>
         <Button
           disabled={!signInResponse || disabled}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-lg w-full shadow-md transition-colors"
         >
           <UploadCloud className="w-4 h-4 mr-2" />
-          Alles an die openSenseMap hochladen
+          Alles hochladen
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">

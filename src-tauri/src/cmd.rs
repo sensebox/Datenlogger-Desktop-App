@@ -97,7 +97,8 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
 
 /// Öffnet den seriellen Port, sendet einen Befehl und liest die Antwort asynchron.
 /// Gibt die gesammelten Daten als String zurück.
-async fn send_command_and_read_response(port_name: &str, command: &str) -> Result<String, String> {
+#[command]
+pub async fn send_command_and_read_response(port_name: &str, command: &str) -> Result<String, String> {
     // Öffne den seriellen Port asynchron
     let mut port = SerialPort::open(port_name, 9600).map_err(|e| {
         eprintln!("Error opening serial port: {}", e);
@@ -231,6 +232,9 @@ pub async fn connect_read_config(port: &str, command: &str) -> Result<SenseboxCo
     Ok(config)
 }
 
+
+
+
 #[command]
 pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInfo>, String> {
     // Open port
@@ -245,7 +249,7 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
         if parts.len() == 2 {
             let filename = parts[0].to_string();
             // if filename ends with .CFG then skip
-            if filename.ends_with(".CFG")  || filename.starts_with('.') || filename.starts_with("_") {
+            if filename.starts_with('.') || filename.starts_with("_") {
                 continue;
             }
             files.push(FileInfo {
@@ -258,7 +262,7 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
 
     Ok(files)
 }
-
+// filename.ends_with(".CFG")  || 
 #[command]
 pub fn delete_file(port: &str, command: &str) -> Result<String, String> {
     let mut port = match serialport::new(port.to_string(), 115_200)
@@ -331,6 +335,25 @@ pub async fn get_file_content(port: &str, command: &str) -> Result<File, String>
         checksum,
     });
 }
+
+#[command]
+pub async fn write_file(port: &str, command: &str) -> Result<String, String> {
+    
+    print!("Writing to file: {}", command);
+    let collected_data = send_command_and_read_response2(port, command).await?;
+    // Read data
+    print!("Collected data: {}", collected_data);
+    print!("Finished!");
+    // Hier kannst du bei Bedarf noch auf "OK" prüfen oder den vollen String zurückgeben
+    if collected_data.is_empty() {
+        return Err("Error: No data received".to_string());
+    }
+
+    
+    return Ok("All data written successfully".to_string());
+
+}
+
 
 #[command]
 pub fn save_data_to_file(
