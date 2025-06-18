@@ -125,7 +125,7 @@ export default function ConfigForm(
           disabled={!confirmed}
           className="disabled:opacity-50"
           value={senseboxId}
-          onChange={(e) => setSenseboxId(e.target.value)}
+          onChange={(e) => setSenseboxId(e.target.value.replace(/\s+/g, ""))}
         />
       </div>
 
@@ -138,7 +138,7 @@ export default function ConfigForm(
           disabled={!confirmed}
           className="disabled:opacity-50"
           value={tempId}
-          onChange={(e) => setTempId(e.target.value)}
+          onChange={(e) => setTempId(e.target.value.replace(/\s+/g, ""))}
         />
       </div>
 
@@ -151,7 +151,7 @@ export default function ConfigForm(
           disabled={!confirmed}
           className="disabled:opacity-50"
           value={humiId}
-          onChange={(e) => setHumiId(e.target.value)}
+          onChange={(e) => setHumiId(e.target.value.replace(/\s+/g, ""))}
         />
       </div>
 
@@ -160,7 +160,7 @@ export default function ConfigForm(
         <Button type="button" variant="outline" onClick={handleCancel}>
           Abbrechen
         </Button>
-        <Button type="submit" disabled={!confirmed || loading}>
+        <Button  type="submit" disabled={!confirmed || loading}>
         {/* show a small spinner and loading text when loading */}
           {loading ? (
             <div>
