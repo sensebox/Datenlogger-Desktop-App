@@ -75,7 +75,7 @@ export default function Help() {
                 { src: "/images/tutorial/deviceselection.png" },
                 { src: "/images/tutorial/overview.png" },
               ].map(({ src  }) => (
-                <figure key={src} className="flex flex-col justify-between h-full">
+                <figure key={src} className="flex flex-col justify-between h-full ">
                   <img
                     src={src}
                     className="w-full object-contain max-h-48 rounded-md shadow-sm"
