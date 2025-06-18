@@ -176,41 +176,41 @@ export default function SDCardOverview() {
       <CardContent className="p-4">
         <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
           <div className="flex flex-row justify-between align-middle">
-            <h2 className="text-xl font-semibold text-blue-800 mb-2 flex items-center gap-2">
+            <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
               <Smartphone className="w-5 h-5" />
               Geräteinformationen
             </h2>
 
-            <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm border-blue-100 border-solid border-2  ">
+            <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm ">
               <UserNav />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm font-medium text-blue-600">Gerätename</p>
+              <p className="text-sm font-medium">Gerätename</p>
 
-              <p className="text-lg text-blue-900">{config?.name}</p>
+              <p className="text-lg text-blue-500">{config?.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-blue-600">senseBox-ID</p>
+              <p className="text-sm font-mediu">senseBox-ID</p>
               {config?.sensebox_id ? (
-                <div className=" flex flex-row gap-2 text-lg text-blue-900 justify-between">
+                <div className=" flex flex-row gap-2 text-lg  justify-between">
                   <span className="">{config?.sensebox_id} </span>
                   <Button
                     variant={"ghost"}
                     size={"icon"}
                     onClick={() => openFolderInExplorer()}
                   >
-                    <Folder className="w-5 h-5 text-blue-500" />
+                    <Folder className="w-5 h-5 " />
                   </Button>
                   <Dialog
                     open={configModalOpen}
                     onOpenChange={() => setConfigModalOpen(!configModalOpen)}
                   >
                     <DialogTrigger>
-                      <Button size={"icon"} variant={"ghost"}>
-                        <SettingsIcon className="w-5 h-5 text-blue-500" />
+                      <Button disabled={true} size={"icon"} variant={"ghost"}>
+                        <SettingsIcon className="w-5 h-5 " />
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
@@ -226,7 +226,7 @@ export default function SDCardOverview() {
           </div>
           <div className="flex flex-row justify-between mt-4">
             <div>
-              <p className="text-sm font-medium text-blue-600 mb-2">
+              <p className="text-sm font-medium  mb-2">
                 Gerät auswählen
               </p>
               <BoardSwitcher />

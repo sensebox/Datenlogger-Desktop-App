@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CloudIcon, FileText, Calendar, List, UploadCloud } from "lucide-react";
+import { CloudIcon, FileText, Calendar, List, UploadCloud, InfoIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
 import { useToast } from "./ui/use-toast";
@@ -23,6 +23,8 @@ import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 import { createChecksum } from "@/lib/helpers/createChecksum";
 import { User } from "@/types";
 import { Alert } from "./ui/alert";
+import { sign } from "crypto";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 type UploadDialogProps = {
   filename: string;
@@ -48,6 +50,7 @@ export function UploadDialog({
   const [boxInAccount, setBoxInAccount] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
   const { signInResponse } = useAuth();
+  const [ disabledTmp, setDisabledTmp ] = useState<boolean>(false);
   const [file, setFile] = useState<FileStats>({
     firstDate: "",
     lastDate: "",
@@ -61,7 +64,10 @@ export function UploadDialog({
 
   useEffect(() => {
     console.log(deviceId, token);
+    ( !signInResponse || disabled ) && setDisabledTmp(true);
   }, [open]);
+
+
 
   useEffect(() => {
     // Simulate reading file stats (line count, first date)
@@ -137,7 +143,30 @@ export function UploadDialog({
   };
 
   return (
-    <Dialog
+
+    <div>
+       { disabledTmp ? (
+        <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
+                  disabled={disabledTmp}
+                  tooltip="CSV-Datei hochladen"
+                >
+                  <UploadCloud className="w-4 h-4 mr-2" />
+                  Hochladen
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {!signInResponse
+                  ? "Bitte melde dich an, um eine CSV-Datei hochzuladen."
+                  : "Lade die Datei vom Gerät runter, um sie hochzuladen."}
+              </TooltipContent>
+            </Tooltip>    
+
+              ) : (
+                 <Dialog
       open={open}
       onOpenChange={(e) => {
         setOpen(e);
@@ -147,10 +176,13 @@ export function UploadDialog({
         <Button
           size="sm"
           className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
-          disabled={!signInResponse || disabled}
+          disabled={disabledTmp}
+          tooltip="CSV-Datei hochladen"
         >
           <UploadCloud className="w-4 h-4 mr-2" />
           Hochladen
+
+
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">
@@ -202,5 +234,12 @@ export function UploadDialog({
       </DialogContent>
       {loading && <LoadingOverlay />}
     </Dialog>
-  );
+
+              )}
+    </div>
+  )
+
 }
+
+
+   

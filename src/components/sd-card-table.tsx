@@ -141,7 +141,7 @@ export function FileTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-green-50">
-            <TableHead className="text-green-800">Datei</TableHead>
+            <TableHead className="text-green-800">Name</TableHead>
             <TableHead className="text-green-800">Größe</TableHead>
             <TableHead className="text-green-800">Status</TableHead>
             <TableHead className="text-green-800">Aktionen</TableHead>
