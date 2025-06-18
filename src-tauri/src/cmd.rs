@@ -249,7 +249,7 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
         if parts.len() == 2 {
             let filename = parts[0].to_string();
             // if filename ends with .CFG then skip
-            if filename.starts_with('.') || filename.starts_with("_") {
+            if filename.ends_with(".CFG")  ||  filename.starts_with('.') || filename.starts_with("_") {
                 continue;
             }
             files.push(FileInfo {
@@ -262,7 +262,7 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
 
     Ok(files)
 }
-// filename.ends_with(".CFG")  || 
+// 
 #[command]
 pub fn delete_file(port: &str, command: &str) -> Result<String, String> {
     let mut port = match serialport::new(port.to_string(), 115_200)
