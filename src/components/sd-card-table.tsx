@@ -30,10 +30,10 @@ import { UploadDialog } from "./upload-dialog";
 import { useFileStore } from "@/lib/store/files";
 import { invoke } from "@tauri-apps/api";
 import { deleteFile } from "@/lib/fs";
-import { toast } from "./ui/use-toast";
 import { FileStats } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
 import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { toast } from "sonner";
 
 type FileTableProps = {
   data: Array<any>;
@@ -116,18 +116,14 @@ export function FileTable({
         config?.sensebox_id || ""
       );
       setFiles(checkedFiles);
-      toast({
-        variant: "success",
-        description: `Datei ${selectedFile.filename} erfolgreich gelöscht.`,
-        duration: 3000,
-      });
+      toast.success("Datei erfolgreich gelöscht.");
+
 
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: `Fehler beim Löschen der Datei: ${error}`,
-        duration: 3000,
-      });
+      toast.error(
+        `Fehler beim Löschen der Datei: ${error instanceof Error ? error.message : error}`
+      );
+
       console.error("Fehler beim Löschen:", error);
     } finally {
       setIsLoading(false);

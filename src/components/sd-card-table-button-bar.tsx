@@ -2,6 +2,8 @@ import { DownloadIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
 import { UploadAllDialog } from "./upload-all-dialog";
 import { Trash } from "lucide-react";
+import { Tooltip } from "@radix-ui/react-tooltip";
+import { TooltipTrigger } from "./ui/tooltip";
 
 interface SDCardTableButtonBarProps {
   data: any[];
@@ -32,14 +34,15 @@ export const SDCardTableButtonBar = ({
         files={data}
         deviceId={config?.sensebox_id}
       />
-      <Button
+
+      {/* <Button
         onClick={() => deleteAllFiles()}
         disabled={true}
         variant={"destructive"}
       >
         <Trash className="mr-2 h-4 w-4  text-white" />
         Gerätespeicher leeren
-      </Button>
+      </Button> */}
     </div>
   );
 };
