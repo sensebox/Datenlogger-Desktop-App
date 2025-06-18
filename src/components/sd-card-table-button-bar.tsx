@@ -38,11 +38,13 @@ export const SDCardTableButtonBar = ({
   return (
   
 
-    <div className="space-y-3">
+    <div className="flex-col w-full  ">
             {/* Primäre Aktionen */}
+            <div className="flex flex-col items-center gap-2">
+
             <Button
               onClick={downloadAllFiles}
-              className="w-full"
+              className="w-1/2"
               style={{ backgroundColor: "#3B82F6" /* bg-blue-500 */ }}
             >
               <DownloadIcon className="h-5 w-5 mr-2" />
@@ -54,11 +56,16 @@ export const SDCardTableButtonBar = ({
         files={data}
         deviceId={config?.sensebox_id}
       />
-      <div className="border-t border-gray-200 pt-3" />
+            </div>
+
+      <div className=" mt-4 border-t border-gray-200 pt-3" />
+
       {/* Sekundäre Aktionen */}
+      <div className="flex flex-col gap-2 items-center">
+
       <Button
         onClick={openFolderInExplorer}
-        className="w-full " 
+        className="w-1/2" 
         variant="secondary"
         style={{ backgroundColor: "#FBBF24" /* bg-yellow-400 */ }}
       >
@@ -66,15 +73,18 @@ export const SDCardTableButtonBar = ({
         Ordner öffnen
       </Button>
       <EditConfigDialog />
-
-      <Link to="/help">
-        <Button
-          variant={"outline"}
-          className="w-full mt-2" >
-          <HelpCircleIcon className="mr-2 h-4 w-4   " />
+      <Button 
+        variant={"outline"}
+        className="w-1/2"
+        asChild>
+        <Link to="/help">
+                  <HelpCircleIcon className="mr-2 h-4 w-4   " />
           Hilfe
-        </Button>
-      </Link>
+
+        </Link>
+      </Button>
+      </div>
+
       </div>
   );
 };

@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { CogIcon } from "lucide-react";
+import { CogIcon, SettingsIcon } from "lucide-react";
 
 export function EditConfigDialog({})  {
     const [open, setOpen] = useState<boolean>(false);
@@ -22,10 +22,10 @@ export function EditConfigDialog({})  {
         >   
         <DialogTrigger asChild>
             <Button
-            className="w-full"
+            className="w-1/2"
                 >
-                    <CogIcon className="h-5 w-5 mr-2" />
-                Konfiguration bearbeiten
+                    <SettingsIcon className="h-5 w-5 mr-2" />
+                    Config Datei ändern
                 </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
