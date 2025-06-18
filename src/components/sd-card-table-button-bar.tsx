@@ -1,9 +1,10 @@
 import { DownloadIcon } from "@radix-ui/react-icons";
 import { Button } from "./ui/button";
 import { UploadAllDialog } from "./upload-all-dialog";
-import { Trash } from "lucide-react";
+import { HelpCircleIcon, Trash } from "lucide-react";
 import { Tooltip } from "@radix-ui/react-tooltip";
 import { TooltipTrigger } from "./ui/tooltip";
+import { Link } from "react-router-dom";
 
 interface SDCardTableButtonBarProps {
   data: any[];
@@ -34,6 +35,18 @@ export const SDCardTableButtonBar = ({
         files={data}
         deviceId={config?.sensebox_id}
       />
+      <Link
+        to="/help"
+        >
+          <Button
+            variant={"outline"}
+            className="w-full"
+            >
+                            <HelpCircleIcon className="mr-2 h-4 w-4   " />
+
+            Hilfe
+            </Button>
+        </Link>
 
       {/* <Button
         onClick={() => deleteAllFiles()}

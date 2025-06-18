@@ -158,6 +158,7 @@ export default function SDCardOverview() {
             <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
               <SaveIcon className="w-5 h-5" />
               senseBox SD-Karte Übersicht
+              
             </h2>
 
             <div className="flex flex-row gap-2 p-2 cursor-pointer rounded-sm ">
@@ -201,11 +202,7 @@ export default function SDCardOverview() {
               ) : (
                 <></>
               )}
-              <Link
-                to="/help"
-              >
-              <HelpCircleIcon className="w-5 h-5  mt-2" />
-              </Link>
+
             </div>
           </div>
           <div className="flex flex-row justify-between mt-4">
