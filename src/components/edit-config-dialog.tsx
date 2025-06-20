@@ -28,6 +28,9 @@ export function EditConfigDialog({})  {
                     Config Datei ändern
                 </Button>
         </DialogTrigger>
+        <DialogTitle className="hidden">
+            
+        </DialogTitle>
         <DialogContent className="sm:max-w-[425px]">
             <EditconfigForm setModal={setOpen} />
         </DialogContent>

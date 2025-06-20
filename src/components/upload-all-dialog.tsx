@@ -28,6 +28,9 @@ import { extractDatesFromCSV } from "@/lib/helpers/extractDatesFromCSV";
 import { useAuth } from "./auth-provider";
 import { useFileStore } from "@/lib/store/files";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { toast } from "sonner"
+import { createChecksum } from "@/lib/helpers/createChecksum";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 
 export function UploadAllDialog({
   deviceId,
@@ -36,7 +39,6 @@ export function UploadAllDialog({
   deviceId: any;
   disabled: boolean;
 }) {
-  const { toast } = useToast();
   const { signInResponse } = useAuth();
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -85,13 +87,19 @@ export function UploadAllDialog({
 
   const initiateUploadAll = async () => {
     try {
+
       setLoading(true);
       setUploadCount(0);
 
-      for (let i = 0; i < data.length; i++) {
-        // Starte den Upload und den Timer gleichzeitig
+      for (let i = 0; i < files.length; i++) {
+        const filename = files[i].filename;
+        if (typeof filename !== "string") {
+          continue;
+        }
+        console.log(files)
         await Promise.all([
-          uploadFile(data[i].filename), // Upload der Datei
+          
+          uploadFile(filename), // Upload der Datei
           new Promise((resolve) => setTimeout(resolve, 1000)), // Mindestwartezeit von 1 Sekunde
         ]);
 
@@ -100,64 +108,81 @@ export function UploadAllDialog({
 
       setLoading(false);
       setOpen(false);
-      toast({
-        variant: "success",
-        description: "Die Dateien wurden erfolgreich hochgeladen.",
-        duration: 1000,
-      });
+      toast.success("Die Dateien wurden erfolgreich hochgeladen.")
+
     } catch (error) {
       console.error(error);
       setLoading(false);
       setOpen(false);
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: "An error occurred while uploading the files: " + error,
-        duration: 5000,
-      });
+      toast.error("An error occurred while uploading the files: " + error)
+
     }
   };
 
-  const uploadFile = async (filename: any) => {
+  const uploadFile = async (filename: string) => {
+  setLoading(true);
+
+  try {
+    // CSV einlesen
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
-    const response = await fetch(
+
+    // get the box' access token using the login token
+    const boxToken = await fetch (
+            `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+              {
+                method:'GET',
+                headers: {
+                  Authorization: "Bearer " + signInResponse?.token
+                  
+                }
+              }
+    )
+    const boxTokenRes = await boxToken.json();
+    // Daten senden
+    const res = await fetch(
       `https://api.opensensemap.org/boxes/${deviceId}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: `${token}`,
-          "content-type": "text/csv",
+          Authorization: boxTokenRes.data.box.access_token,
+          "Content-Type": "text/csv",
         },
         body: csv,
       }
     );
-    const answer = await response.json();
+    const result = await res.json();
 
-    if (
-      answer.code === "BadRequest" ||
-      answer.code === "UnprocessableEntity" ||
-      answer.code === "Unauthorized" ||
-      answer.code === "Forbidden" ||
-      answer.code === "NotFound"
-    ) {
-      setOpen(false);
-      toast({
-        variant: "destructive",
-        description:
-          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
-        duration: 5000,
-      });
-    } else {
-      // create a checksum based on filename and the first line of the csv
-      const checksum = `${filename}_${csv.split("\n")[0]}`;
-
-      await invoke("insert_data", {
-        filename: filename,
-        device: deviceId,
-        checksum: checksum,
-      });
+    if (!res.ok) {
+      // API-Fehler
+      throw new Error(
+        result.message
+          ? `${result.message} (${result.code || res.status})`
+          : `HTTP ${res.status}`
+      );
     }
-  };
+
+    // Erfolg
+    toast.success("Datei erfolgreich hochgeladen");
+
+    // Nacharbeiten: Checksum & DB
+    const firstLine = csv.split("\n", 1)[0];
+    const checksum = createChecksum(`${filename}_${firstLine}`);
+    await invoke("insert_data", {
+      filename,
+      device: deviceId,
+      size: csv.length,
+      checksum,
+    });
+
+    const updated = await checkFilesUploaded(files, deviceId);
+  } catch (err: any) {
+    // Netzwerk- oder API-Fehler
+    toast.error(`Fehler: ${err.message || err}`);
+  } finally {
+    setOpen(false);
+    setLoading(false);
+  }
+};
 
   return (
     <Dialog

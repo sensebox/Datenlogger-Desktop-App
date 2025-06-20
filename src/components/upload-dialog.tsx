@@ -57,9 +57,9 @@ export function UploadDialog({
   const { files, setFiles } = useFileStore();
 
   useEffect(() => {
+
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
-    console.log("token is", token)
   }, [deviceId]);
 
   useEffect(() => {
@@ -101,13 +101,25 @@ const uploadFile = async (event: React.FormEvent) => {
     // CSV einlesen
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
 
+    // get the box' access token using the login token
+    const boxToken = await fetch (
+            `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+              {
+                method:'GET',
+                headers: {
+                  Authorization: "Bearer " + signInResponse?.token
+                  
+                }
+              }
+    )
+    const boxTokenRes = await boxToken.json();
     // Daten senden
     const res = await fetch(
       `https://api.opensensemap.org/boxes/${deviceId}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: token,
+          Authorization: boxTokenRes.data.box.access_token,
           "Content-Type": "text/csv",
         },
         body: csv,
