@@ -62,6 +62,7 @@ export default function AuthProvider({ children }: ViewProps) {
     }
 
     setToken(response);
+    response.timestamp = Date.now();
     storage.set("auth", response);
     const origin = location.state?.from?.pathname || "/uploads";
     navigate(origin);

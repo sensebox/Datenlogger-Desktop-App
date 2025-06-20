@@ -57,6 +57,7 @@ type SignInResponse = {
   message: string;
   refreshToken: string;
   token: string;
+  timestamp?: number
 };
 
 type Upload = {
