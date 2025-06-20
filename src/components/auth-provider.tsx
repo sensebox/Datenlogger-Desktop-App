@@ -1,8 +1,8 @@
 import { SignInResponse } from "@/types";
 import { createContext, useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useToast } from "./ui/use-toast";
 import storage from "@/lib/local-storage";
+import { toast } from "sonner";
 
 interface ViewProps {
   children: React.ReactNode | React.ReactNode[];
@@ -46,7 +46,6 @@ export default function AuthProvider({ children }: ViewProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { toast } = useToast();
 
   // Load SignInResponse from localStorage and set it on context
   const auth = storage.get<SignInResponse | undefined>("auth");
@@ -56,11 +55,8 @@ export default function AuthProvider({ children }: ViewProps) {
     const response = await fakeAuth(username, password);
 
     if (response.code !== "Authorized") {
-      toast({
-        variant: "destructive",
-        title: `${response.code}`,
-        description: `${response.message}`,
-      });
+      toast.error("Login failed. Please check your credentials.");
+
 
       return;
     }

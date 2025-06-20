@@ -7,9 +7,9 @@ import { invoke } from "@tauri-apps/api";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/components/auth-provider";
-import { useToast } from "@/components/ui/use-toast";
 import storage from "@/lib/local-storage";
 import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { toast } from "sonner";
 
 export default function Folder() {
   let params = useParams();
@@ -21,7 +21,6 @@ export default function Folder() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const { signInResponse } = useAuth();
-  const { toast } = useToast();
   useEffect(() => {
     const readDir = async () => {
       const uploadedFiles: Upload[] = await invoke("get_data", {
@@ -63,12 +62,10 @@ export default function Folder() {
         answer.code === "Unauthorized" ||
         answer.code === "Forbidden"
       ) {
-        toast({
-          variant: "destructive",
-          title: answer.code,
-          description: answer.message,
-          duration: 5000,
-        });
+        toast.error(
+          `Fehler beim Abrufen des Secrets: ${answer.message} (${answer.code})`
+        );
+
       } else {
         setAccessToken(answer.data.box.access_token);
         storage.set(`accessToken_${deviceId}`, answer.data.box.access_token);

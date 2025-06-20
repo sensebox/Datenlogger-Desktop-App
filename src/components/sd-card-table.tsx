@@ -30,7 +30,10 @@ import { UploadDialog } from "./upload-dialog";
 import { useFileStore } from "@/lib/store/files";
 import { invoke } from "@tauri-apps/api";
 import { deleteFile } from "@/lib/fs";
-import { toast } from "./ui/use-toast";
+import { FileStats } from "@/types";
+import { useBoardStore } from "@/lib/store/board";
+import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { toast } from "sonner";
 
 type FileTableProps = {
   data: Array<any>;
@@ -46,12 +49,13 @@ export function FileTable({
   downloadFile,
   port,
 }: FileTableProps) {
-  const { files } = useFileStore();
-
+  const { files, setFiles} = useFileStore();
+  const { serialPort  } = useBoardStore();
   // Zustand, um das Modal, den aktuell ausgewählten Datensatz und den Ladezustand zu steuern
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
 
   const formatBytes = (bytes: any) => {
     if (bytes === 0) return "0 Bytes";
@@ -70,7 +74,7 @@ export function FileTable({
       case "pending":
         return "bg-yellow-100 text-yellow-800";
       case "synced":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 ";
       default:
         return "bg-red-100 text-red-800";
     }
@@ -87,7 +91,7 @@ export function FileTable({
     setIsLoading(true);
     try {
       if (mode === "all") {
-        const deleted = await invoke("delete_file", {
+        const deleted = await invoke("delete_file_async", {
           port: port ? port : null,
           command: `<4 ${selectedFile.filename}>`,
         });
@@ -95,24 +99,31 @@ export function FileTable({
         const deleteLocal = await deleteFile(`.reedu/data/${config?.sensebox_id}/${selectedFile.filename}`);
         
       } else if (mode === "device") {
-        const deleted = await invoke("delete_file", {
+        const deleted = await invoke("delete_file_async", {
           port: port ? port : null,
           command: `<4 ${selectedFile.filename}>`,
         });
         console.log("Geräte Löschung:", deleted);
       }
-      toast({
-        variant: "success",
-        description: `Datei ${selectedFile.filename} erfolgreich gelöscht. Board neu laden um Änderungen zu sehen.`,
-        duration: 3000,
+
+      // Aktualisiere die Dateiliste, indem die gelöschte Datei entfernt wird
+      const files: FileStats[] = await invoke("connect_list_files", {
+        port: serialPort?.port,
+        command: "<1 root>",
       });
+      const checkedFiles = await checkFilesUploaded(
+        files,
+        config?.sensebox_id || ""
+      );
+      setFiles(checkedFiles);
+      toast.success("Datei erfolgreich gelöscht.");
+
 
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: `Fehler beim Löschen der Datei: ${error}`,
-        duration: 3000,
-      });
+      toast.error(
+        `Fehler beim Löschen der Datei: ${error instanceof Error ? error.message : error}`
+      );
+
       console.error("Fehler beim Löschen:", error);
     } finally {
       setIsLoading(false);
@@ -126,7 +137,7 @@ export function FileTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-green-50">
-            <TableHead className="text-green-800">Datei</TableHead>
+            <TableHead className="text-green-800">Name</TableHead>
             <TableHead className="text-green-800">Größe</TableHead>
             <TableHead className="text-green-800">Status</TableHead>
             <TableHead className="text-green-800">Aktionen</TableHead>
@@ -163,7 +174,7 @@ export function FileTable({
               </TableCell>
               <TableCell>
                 <span
-                  className={`flex items-center gap-1 ${getStatusClasses(
+                  className={`flex items-center gap-1 rounded-md p-0.5 ${getStatusClasses(
                     file.status ?? "unknown"
                   )}`}
                 >
@@ -243,7 +254,7 @@ export function FileTable({
             </Button>
             <Button
               onClick={() => handleDeleteConfirmation("all")}
-              disabled={isLoading}
+              disabled={isLoading || selectedFile?.status !== "synced"}
               variant="destructive"
             >
               Gerät &amp; PC

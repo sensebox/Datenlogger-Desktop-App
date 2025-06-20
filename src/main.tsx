@@ -17,6 +17,7 @@ import Login from "./routes/login";
 
 import "./styles.css";
 import Folder from "./routes/folder";
+import Help from "./routes/help";
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
       {
         path: "login",
         element: <Login />,
+      },
+      {
+        path: "help",
+        element: (<Help />)
       },
       {
         path: "upload",

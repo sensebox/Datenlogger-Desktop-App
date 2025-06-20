@@ -8,10 +8,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CloudIcon, FileText, Calendar, List, UploadCloud } from "lucide-react";
+import { CloudIcon, FileText, Calendar, List, UploadCloud, InfoIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
-import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import storage from "@/lib/local-storage";
@@ -23,6 +22,9 @@ import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
 import { createChecksum } from "@/lib/helpers/createChecksum";
 import { User } from "@/types";
 import { Alert } from "./ui/alert";
+import { sign } from "crypto";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { toast } from "sonner"
 
 type UploadDialogProps = {
   filename: string;
@@ -41,13 +43,13 @@ export function UploadDialog({
   setCounter,
   disabled,
 }: UploadDialogProps) {
-  const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [boxInAccount, setBoxInAccount] = useState<boolean>(false);
   const [token, setToken] = useState<string>("");
   const { signInResponse } = useAuth();
+  const [ disabledTmp, setDisabledTmp ] = useState<boolean>(false);
   const [file, setFile] = useState<FileStats>({
     firstDate: "",
     lastDate: "",
@@ -55,13 +57,18 @@ export function UploadDialog({
   const { files, setFiles } = useFileStore();
 
   useEffect(() => {
+
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
   }, [deviceId]);
 
   useEffect(() => {
     console.log(deviceId, token);
+    ( !signInResponse || disabled ) && setDisabledTmp(true);
+    
   }, [open]);
+
+
 
   useEffect(() => {
     // Simulate reading file stats (line count, first date)
@@ -86,58 +93,99 @@ export function UploadDialog({
     if (open) getFileStats();
   }, [open, deviceId, filename]);
 
-  const uploadFile = async (event: any) => {
-    setLoading(true);
+const uploadFile = async (event: React.FormEvent) => {
+  event.preventDefault();
+  setLoading(true);
+
+  try {
+    // CSV einlesen
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
-    const response = await fetch(
+
+    // get the box' access token using the login token
+    const boxToken = await fetch (
+            `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+              {
+                method:'GET',
+                headers: {
+                  Authorization: "Bearer " + signInResponse?.token
+                  
+                }
+              }
+    )
+    const boxTokenRes = await boxToken.json();
+    // Daten senden
+    const res = await fetch(
       `https://api.opensensemap.org/boxes/${deviceId}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: `${token}`,
-          "content-type": "text/csv",
+          Authorization: boxTokenRes.data.box.access_token,
+          "Content-Type": "text/csv",
         },
         body: csv,
       }
     );
-    const answer = await response.json();
+    const result = await res.json();
 
-    if (
-      answer.code === "BadRequest" ||
-      answer.code === "UnprocessableEntity" ||
-      answer.code === "Unauthorized" ||
-      answer.code === "Forbidden" ||
-      answer.code === "NotFound"
-    ) {
-      setOpen(false);
-      toast({
-        variant: "destructive",
-        description:
-          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
-        duration: 5000,
-      });
-    } else {
-      toast({
-        variant: "success",
-        description: "Die Datei wurde erfolgreich hochgeladen",
-        duration: 1000,
-      });
-      const checksum = createChecksum(`${filename}_${csv.split("\n")[0]}`);
-      await invoke("insert_data", {
-        filename: filename,
-        device: deviceId,
-        size: csv.length,
-        checksum: checksum,
-      });
-      setFiles(await checkFilesUploaded(files, deviceId));
+    if (!res.ok) {
+      // API-Fehler
+      throw new Error(
+        result.message
+          ? `${result.message} (${result.code || res.status})`
+          : `HTTP ${res.status}`
+      );
     }
+
+    // Erfolg
+    toast.success("Datei erfolgreich hochgeladen");
+
+    // Nacharbeiten: Checksum & DB
+    const firstLine = csv.split("\n", 1)[0];
+    const checksum = createChecksum(`${filename}_${firstLine}`);
+    await invoke("insert_data", {
+      filename,
+      device: deviceId,
+      size: csv.length,
+      checksum,
+    });
+
+    const updated = await checkFilesUploaded(files, deviceId);
+    setFiles(updated);
+  } catch (err: any) {
+    // Netzwerk- oder API-Fehler
+    toast.error(`Fehler: ${err.message || err}`);
+  } finally {
     setOpen(false);
     setLoading(false);
-    event.preventDefault();
-  };
+  }
+};
+
 
   return (
-    <Dialog
+
+    <div>
+       { disabledTmp ? (
+        <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
+                  disabled={disabledTmp}
+                  tooltip="CSV-Datei hochladen"
+                >
+                  <UploadCloud className="w-4 h-4 mr-2" />
+                  Hochladen
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {!signInResponse
+                  ? "Bitte melde dich an, um eine CSV-Datei hochzuladen."
+                  : "Lade die Datei vom Gerät runter, um sie hochzuladen."}
+              </TooltipContent>
+            </Tooltip>    
+
+              ) : (
+                 <Dialog
       open={open}
       onOpenChange={(e) => {
         setOpen(e);
@@ -147,10 +195,13 @@ export function UploadDialog({
         <Button
           size="sm"
           className="bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition-colors"
-          disabled={!signInResponse || disabled}
+          disabled={disabledTmp}
+          tooltip="CSV-Datei hochladen"
         >
           <UploadCloud className="w-4 h-4 mr-2" />
           Hochladen
+
+
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[450px] bg-gray-50 rounded-lg p-6 shadow-lg">
@@ -202,5 +253,12 @@ export function UploadDialog({
       </DialogContent>
       {loading && <LoadingOverlay />}
     </Dialog>
-  );
+
+              )}
+    </div>
+  )
+
 }
+
+
+   

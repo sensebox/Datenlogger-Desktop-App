@@ -28,11 +28,11 @@ import { FileStats, SenseboxConfig, SerialPort, Upload } from "@/types";
 import { useBoardStore } from "@/lib/store/board";
 import { createDirectory, readCSVFile, readDirectory } from "@/lib/fs";
 import LoadingOverlay from "./ui/LoadingOverlay";
-import { useToast } from "./ui/use-toast";
 import { useFileStore } from "@/lib/store/files";
 import { read, readFile } from "fs";
 import { readConfig } from "@/lib/helpers/readConfig";
 import { checkFilesUploaded } from "@/lib/helpers/checkFilesUploaded";
+import { toast } from "sonner";
 
 type PopoverTriggerProps = React.ComponentPropsWithoutRef<
   typeof PopoverTrigger
@@ -41,7 +41,6 @@ type PopoverTriggerProps = React.ComponentPropsWithoutRef<
 interface BoardSwitcherProps extends PopoverTriggerProps {}
 
 export default function BoardSwitcher({ className }: BoardSwitcherProps) {
-  const { toast } = useToast();
 
   const [open, setOpen] = React.useState(false);
   const [serialPorts, setSerialPorts] = React.useState<SerialPort[]>();
@@ -56,6 +55,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
 
   async function listSerialports() {
     setSerialPorts(await invoke("list_serialport_devices"));
+
   }
 
   React.useEffect(() => {
@@ -79,6 +79,7 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
       if (!serialPort) {
         throw new Error("No serial port selected.");
       }
+          setSerialPort(serialPort);
       const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
         port: serialPort.port,
         command: "<3 config>",
@@ -94,23 +95,14 @@ export default function BoardSwitcher({ className }: BoardSwitcherProps) {
         boardConfig.sensebox_id
       );
       setFiles(checkedFiles);
-      toast({
-        variant: "success",
-        description: "Verbindung erfolgreich hergestellt.",
-        duration: 5000,
-      });
+
+      toast.success("Verbindung erfolgreich hergestellt.")
       setConfig(boardConfig);
-      setSerialPort(serialPort);
       setLoading(false);
     } catch (error: any) {
       setLoading(false);
       console.log(error);
-      toast({
-        variant: "destructive",
-        title: error.message,
-        description: error,
-        duration: 5000,
-      });
+   
     }
   }
 
