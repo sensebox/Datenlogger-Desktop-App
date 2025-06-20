@@ -11,7 +11,6 @@ import {
 import { CloudIcon, FileText, Calendar, List, UploadCloud, InfoIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { readCSVFile } from "@/lib/fs";
-import { useToast } from "./ui/use-toast";
 import { invoke } from "@tauri-apps/api";
 import LoadingOverlay from "./ui/LoadingOverlay";
 import storage from "@/lib/local-storage";
@@ -25,6 +24,7 @@ import { User } from "@/types";
 import { Alert } from "./ui/alert";
 import { sign } from "crypto";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { toast } from "sonner"
 
 type UploadDialogProps = {
   filename: string;
@@ -43,7 +43,6 @@ export function UploadDialog({
   setCounter,
   disabled,
 }: UploadDialogProps) {
-  const { toast } = useToast();
 
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -60,11 +59,13 @@ export function UploadDialog({
   useEffect(() => {
     if (storage.get(`accessToken_${deviceId}`) === undefined) return;
     setToken(storage.get(`accessToken_${deviceId}`));
+    console.log("token is", token)
   }, [deviceId]);
 
   useEffect(() => {
     console.log(deviceId, token);
     ( !signInResponse || disabled ) && setDisabledTmp(true);
+    
   }, [open]);
 
 
@@ -92,55 +93,61 @@ export function UploadDialog({
     if (open) getFileStats();
   }, [open, deviceId, filename]);
 
-  const uploadFile = async (event: any) => {
-    setLoading(true);
+const uploadFile = async (event: React.FormEvent) => {
+  event.preventDefault();
+  setLoading(true);
+
+  try {
+    // CSV einlesen
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
-    const response = await fetch(
+
+    // Daten senden
+    const res = await fetch(
       `https://api.opensensemap.org/boxes/${deviceId}/data`,
       {
         method: "POST",
         headers: {
-          Authorization: `${token}`,
-          "content-type": "text/csv",
+          Authorization: token,
+          "Content-Type": "text/csv",
         },
         body: csv,
       }
     );
-    const answer = await response.json();
+    const result = await res.json();
 
-    if (
-      answer.code === "BadRequest" ||
-      answer.code === "UnprocessableEntity" ||
-      answer.code === "Unauthorized" ||
-      answer.code === "Forbidden" ||
-      answer.code === "NotFound"
-    ) {
-      setOpen(false);
-      toast({
-        variant: "destructive",
-        description:
-          "Es gab einen Fehler: " + answer.message + " (" + answer.code + ")",
-        duration: 5000,
-      });
-    } else {
-      toast({
-        variant: "success",
-        description: "Die Datei wurde erfolgreich hochgeladen",
-        duration: 1000,
-      });
-      const checksum = createChecksum(`${filename}_${csv.split("\n")[0]}`);
-      await invoke("insert_data", {
-        filename: filename,
-        device: deviceId,
-        size: csv.length,
-        checksum: checksum,
-      });
-      setFiles(await checkFilesUploaded(files, deviceId));
+    if (!res.ok) {
+      // API-Fehler
+      throw new Error(
+        result.message
+          ? `${result.message} (${result.code || res.status})`
+          : `HTTP ${res.status}`
+      );
     }
+
+    // Erfolg
+    toast.success("Datei erfolgreich hochgeladen");
+
+    // Nacharbeiten: Checksum & DB
+    const firstLine = csv.split("\n", 1)[0];
+    const checksum = createChecksum(`${filename}_${firstLine}`);
+    await invoke("insert_data", {
+      filename,
+      device: deviceId,
+      size: csv.length,
+      checksum,
+    });
+
+    const updated = await checkFilesUploaded(files, deviceId);
+    setFiles(updated);
+  } catch (err: any) {
+    // Netzwerk- oder API-Fehler
+    toast.error(`Fehler: ${err.message || err}`);
+  } finally {
     setOpen(false);
     setLoading(false);
-    event.preventDefault();
-  };
+  }
+};
+
 
   return (
 

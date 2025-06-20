@@ -249,7 +249,7 @@ pub async fn connect_list_files(port: &str, command: &str) -> Result<Vec<FileInf
         if parts.len() == 2 {
             let filename = parts[0].to_string();
             // if filename ends with .CFG then skip
-            if filename.ends_with(".CFG")  ||  filename.starts_with('.') || filename.starts_with("_") {
+            if filename.ends_with(".CFG")  ||  filename.starts_with('.') || filename.starts_with("_") || filename.ends_with(".cfg") {
                 continue;
             }
             files.push(FileInfo {

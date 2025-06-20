@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,10 @@ export default function SDCardOverview() {
   const { files, setFiles } = useFileStore();
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const { signInResponse } = useAuth();
+
+  useEffect(()=>{
+    console.log(files)
+  }, [files])
 
   const syncFiles = async () => {
     try {
@@ -119,6 +123,7 @@ export default function SDCardOverview() {
       for (let index = 0; index < files.length; index++) {
         const file = files[index];
         if (file.status === "synced" || file.status === "uploaded") continue;
+
         if (file.filename) await downloadFile(file.filename);
       }
       if (config?.sensebox_id) {
