@@ -95,7 +95,6 @@ export function UploadDialog({
 
 
     const handleRefresh = async (refreshToken: string) => {
-        console.log(refreshToken, "refersh")
         try{
             console.log("repsosne")
             const response = await fetch("https://api.opensensemap.org/users/refresh-auth", {
@@ -109,7 +108,6 @@ export function UploadDialog({
             })
             const data = await response.json();
             data.timestamp = Date.now();
-            console.log(data);
             storage.set('auth', data)
             return true;
         } catch(err) {
