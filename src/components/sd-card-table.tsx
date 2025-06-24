@@ -254,7 +254,7 @@ export function FileTable({
             </Button>
             <Button
               onClick={() => handleDeleteConfirmation("all")}
-              disabled={isLoading || selectedFile?.status !== "synced"}
+              disabled={isLoading || selectedFile?.status == "pending" }
               variant="destructive"
             >
               Gerät &amp; PC

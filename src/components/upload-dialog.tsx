@@ -93,6 +93,28 @@ export function UploadDialog({
     if (open) getFileStats();
   }, [open, deviceId, filename]);
 
+
+    const handleRefresh = async (refreshToken: string) => {
+        try{
+            console.log("repsosne")
+            const response = await fetch("https://api.opensensemap.org/users/refresh-auth", {
+                method: 'POST', 
+                headers: {
+                    'content-type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token: refreshToken
+                })
+            })
+            const data = await response.json();
+            data.timestamp = Date.now();
+            storage.set('auth', data)
+            return true;
+        } catch(err) {
+            return false;
+        }
+    }
+
 const uploadFile = async (event: React.FormEvent) => {
   event.preventDefault();
   setLoading(true);
@@ -101,6 +123,13 @@ const uploadFile = async (event: React.FormEvent) => {
     // CSV einlesen
     const csv = await readCSVFile(`.reedu/data/${deviceId}/${filename}`);
 
+    const timeOld = signInResponse?.timestamp || 0 
+    const timeNew = Date.now();
+    // when 
+    if( timeNew - timeOld > 3600000) {
+      signInResponse?.refreshToken && handleRefresh(signInResponse?.refreshToken);
+    }
+    
     // get the box' access token using the login token
     const boxToken = await fetch (
             `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
