@@ -132,7 +132,6 @@ async function initiateUploadAll() {
 
   } catch (error) {
     console.error("Upload-Fehler:", error);
-    toast.error("Fehler beim Hochladen: " + error.message);
   }
   finally {
     setLoading(false);
