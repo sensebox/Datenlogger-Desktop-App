@@ -84,7 +84,7 @@ export function UploadDialog({
       // check if the account also owns the box
       const loginResponse: any = storage.get("auth");
       if (!loginResponse) return;
-      const boxes = loginResponse.data.user.boxes;
+      const boxes = loginResponse.data?.user.boxes;
       if (boxes.includes(deviceId)) {
         setBoxInAccount(true);
       }

@@ -48,7 +48,7 @@ export default function Upload() {
                   Device folders
                 </h4>
                 {folders.map((folder, index) => {
-                  const isRegistered = signInResponse?.data.user.boxes.includes(
+                  const isRegistered = signInResponse?.data?.user.boxes.includes(
                     folder.name
                   );
                   return (
