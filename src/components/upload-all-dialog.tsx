@@ -109,10 +109,15 @@ async function initiateUploadAll() {
       if (block) chunks.push(block);
     }
 
-    // 3. Jeden Block nacheinander hochladen
-    for (const chunk of chunks) {
-      await uploadCSV(chunk);
-    }
+      // 3. Blöcke hochladen (mit optionaler Wartezeit)
+      const needDelay = chunks.length > 5;
+      for (let i = 0; i < chunks.length; i++) {
+        setUploadCount(i + 1);
+        await uploadCSV(chunks[i]);
+        if (needDelay && i < chunks.length - 1) {
+          await new Promise(res => setTimeout(res, 15000));
+        }
+      }
 
     // 4. Metadaten (Filename, Device, Size, Checksum) in der DB speichern
     for (const { filename, size, checksum } of fileInfos) {
