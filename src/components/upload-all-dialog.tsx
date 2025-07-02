@@ -78,45 +78,121 @@ export function UploadAllDialog({
     getFileStats();
     const loginResponse: any = storage.get("auth");
     if (!loginResponse) return;
-    const boxes = loginResponse.data.user.boxes;
+    const boxes = loginResponse.data?.user.boxes;
+    if (!boxes || !Array.isArray(boxes)) return;
     if (boxes.includes(deviceId)) {
       setBoxInAccount(true);
     }
   }, [files]);
 
-  const initiateUploadAll = async () => {
-    try {
+  const CHUNK_SIZE = 2499;
 
-      setLoading(true);
-      setUploadCount(0);
+async function initiateUploadAll() {
+  setLoading(true);
+  try {
+    // 1. Alle Dateien parallel lesen und Checksums berechnen
+    const fileInfos = await Promise.all(
+      files.map(async ({ filename, size }) => {
+        const path = `.reedu/data/${deviceId}/${filename}`;
+        const content = (await readCSVFile(path)) || "";
+        const firstLine = content.split("\n", 1)[0] || "";
+        const checksum = await createChecksum(`${filename}_${firstLine}`);
+        return { filename, size, content, checksum };
+      })
+    );
 
-      for (let i = 0; i < files.length; i++) {
-        const filename = files[i].filename;
-        if (typeof filename !== "string") {
-          continue;
-        }
-        console.log(files)
-        await Promise.all([
-          
-          uploadFile(filename), // Upload der Datei
-          new Promise((resolve) => setTimeout(resolve, 1000)), // Mindestwartezeit von 1 Sekunde
-        ]);
-
-        setUploadCount((prev) => prev + 1); // Aktualisieren des Fortschritts
-      }
-
-      setLoading(false);
-      setOpen(false);
-      toast.success("Die Dateien wurden erfolgreich hochgeladen.")
-
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-      setOpen(false);
-      toast.error("An error occurred while uploading the files: " + error)
-
+    // 2. Gesamten Inhalt zusammenführen und in CHUNK_SIZE-Zeilen-Blöcke aufteilen
+    const allLines = fileInfos.flatMap(info => info.content.split("\n"));
+    const chunks = [];
+    for (let i = 0; i < allLines.length; i += CHUNK_SIZE) {
+      const block = allLines.slice(i, i + CHUNK_SIZE).join("\n").trim();
+      if (block) chunks.push(block);
     }
-  };
+
+    // 3. Jeden Block nacheinander hochladen
+    for (const chunk of chunks) {
+      await uploadCSV(chunk);
+    }
+
+    // 4. Metadaten (Filename, Device, Size, Checksum) in der DB speichern
+    for (const { filename, size, checksum } of fileInfos) {
+      console.log("Inserting data:", { filename, device: deviceId, size, checksum });
+
+      await invoke("insert_data", {
+        filename,
+        device: deviceId,
+        size,
+        checksum,
+      });
+    }
+
+    // 5. Optional: prüfen, ob alles hochgeladen ist
+    const updated = await checkFilesUploaded(files, deviceId);
+    // hier ggf. noch eine Rückmeldung an den User geben
+
+  } catch (error) {
+    console.error("Upload-Fehler:", error);
+    toast.error("Fehler beim Hochladen: " + error.message);
+  }
+  finally {
+    setLoading(false);
+  }
+}
+
+
+  const uploadCSV = async (content: string) => {
+setLoading(true);
+
+  try {
+    // CSV einlesen
+
+    // get the box' access token using the login token
+    const boxToken = await fetch (
+            `https://api.opensensemap.org/users/me/boxes/${deviceId}`,
+              {
+                method:'GET',
+                headers: {
+                  Authorization: "Bearer " + signInResponse?.token
+                  
+                }
+              }
+    )
+    const boxTokenRes = await boxToken.json();
+    // Daten senden
+    const res = await fetch(
+      `https://api.opensensemap.org/boxes/${deviceId}/data`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: boxTokenRes.data.box.access_token,
+          "Content-Type": "text/csv",
+        },
+        body: content,
+      }
+    );
+    const result = await res.json();
+
+    if (!res.ok) {
+      // API-Fehler
+      throw new Error(
+        result.message
+          ? `${result.message} (${result.code || res.status})`
+          : `HTTP ${res.status}`
+      );
+    }
+
+    // Erfolg
+    toast.success("Datei erfolgreich hochgeladen");
+
+  } catch (err: any) {
+    // Netzwerk- oder API-Fehler
+    toast.error(`Fehler: ${err.message || err}`);
+  } finally {
+    setOpen(false);
+    setLoading(false);
+  }
+  }
+
 
   const uploadFile = async (filename: string) => {
   setLoading(true);
@@ -231,17 +307,8 @@ export function UploadAllDialog({
             <></>
           )}
           {loading ? (
-            <div className="flex justify-center items-center text-blue-500">
-              <p>
-                {uploadCount}/{data.length} Dateien...
-              </p>
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-all"
-                  style={{ width: `${(uploadCount / data.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
+            <LoadingOverlay
+              />
           ) : (
             <Carousel
               opts={{

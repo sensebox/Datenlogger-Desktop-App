@@ -29,8 +29,7 @@ const getInitials = (name: string) =>
 
 export function UserNav() {
   const { signInResponse, onLogout } = useAuth()
-  const user = signInResponse?.data.user
-
+const user = signInResponse?.data?.user
   // Nicht eingeloggt → Login-Link
   if (!user) {
     return (
