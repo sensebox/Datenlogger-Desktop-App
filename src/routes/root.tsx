@@ -9,7 +9,7 @@ export default function Root() {
   return (
     <AuthProvider>
       <Outlet />
-      <Toaster richColors/>
+      <Toaster position="top-center" richColors/>
     </AuthProvider>
   );
 }

@@ -7,8 +7,8 @@
     "withGlobalTauri": false
   },
   "package": {
-    "productName": "connect-app-desktop",
-    "version": "0.0.0"
+    "productName": "Datenlogger Desktop App",
+    "version": "0.3.5"
   },
   "tauri": {
     "allowlist": {
@@ -52,7 +52,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "senseBox Connect Desktop App",
+        "title": "Datenlogger Desktop App",
         "width": 800,
         "height": 600
       }
