@@ -39,10 +39,20 @@ export default function ConfigForm(
     ].join("\r\n")
 
     try {
+      // Lösche die alte config.cfg zuerst
+      console.log("Lösche alte config.cfg...")
+      const deleteResult = await invoke("delete_file_async", {
+        port: serialPort?.port,
+        command: "<4 config.cfg>",
+      })
+      console.log("config.cfg gelöscht:", deleteResult)
+
+      console.log("Schreibe neue Konfiguration...")
       await invoke("write_file", {
         port: serialPort?.port,
         command: `<5 ${commandString}>`,
       })
+      console.log("Neue Konfiguration geschrieben")
       toast.success("Konfiguration erfolgreich aktualisiert!")
 
       const boardConfig: SenseboxConfig = await invoke("connect_read_config", {
