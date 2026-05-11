@@ -4,11 +4,12 @@ import { Label } from "./ui/label"
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
 import { Checkbox } from "./ui/checkbox"
-import { confirm } from "@tauri-apps/api/dialog"
+import { open } from "@tauri-apps/api/dialog"
 import { invoke } from "@tauri-apps/api/tauri"
+import { readTextFile } from "@tauri-apps/api/fs"
 import { toast } from "sonner"
 import { createDirectory } from "@/lib/fs"
-import {  TriangleAlertIcon } from "lucide-react"
+import { TriangleAlertIcon, UploadIcon } from "lucide-react"
 import { SenseboxConfig } from "@/types"
 
 export default function ConfigForm(
@@ -27,6 +28,53 @@ export default function ConfigForm(
   const [tempId, setTempId] = useState(initialTempId)
   const [humiId, setHumiId] = useState(initialHumiId)
   const [loading, setLoading] = useState(false)
+
+  const handleUploadConfig = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: "Config", extensions: ["cfg"] }],
+      })
+
+      console.log("Selected file:", selected)
+
+      if (!selected || Array.isArray(selected)) return
+
+      const content = await readTextFile(selected)
+      console.log("File content:", content)
+      const lines = content.split(/\r?\n/)
+
+      for (const line of lines) {
+        const [key, value] = line.split("=")
+        if (!key || !value) continue
+
+        const trimmedKey = key.trim()
+        const trimmedValue = value.trim()
+
+        switch (trimmedKey) {
+          case "NAME":
+            setName(trimmedValue)
+            break
+          case "DEVICE_ID":
+            setSenseboxId(trimmedValue)
+            break
+          case "TEMPERATUR_SENSORID":
+            setTempId(trimmedValue)
+            break
+          case "LUFTFEUCHTE_SENSORID":
+            setHumiId(trimmedValue)
+            break
+        }
+      }
+
+      setConfirmed(true)
+      toast.success("Config-Datei erfolgreich geladen!")
+    } catch (err: any) {
+      const errorMsg = typeof err === "string" ? err : err?.message || String(err)
+      toast.error(`Fehler beim Laden der Config-Datei: ${errorMsg}`)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     setLoading(true)
     e.preventDefault()
@@ -43,7 +91,7 @@ export default function ConfigForm(
       console.log("Lösche alte config.cfg...")
       const deleteResult = await invoke("delete_file_async", {
         port: serialPort?.port,
-        command: "<4 config.cfg>",
+        command: "<4 CONFIG.CFG>",
       })
       console.log("config.cfg gelöscht:", deleteResult)
 
@@ -111,6 +159,17 @@ export default function ConfigForm(
           </div>
         </div>
       </div>
+
+      {/* Config-Datei hochladen */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleUploadConfig}
+        className="w-full"
+      >
+        <UploadIcon className="h-4 w-4 mr-2" />
+        Config-Datei hochladen
+      </Button>
 
       {/* Felder */}
       <div className="flex items-center space-x-4">
