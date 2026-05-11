@@ -83,22 +83,14 @@ export default function ConfigForm(
       `DEVICE_ID=${senseboxId}`,
       `TEMPERATUR_SENSORID=${tempId}`,
       `LUFTFEUCHTE_SENSORID=${humiId}`,
-      "END",
     ].join("\r\n")
 
     try {
-      // Lösche die alte config.cfg zuerst
-      console.log("Lösche alte config.cfg...")
-      const deleteResult = await invoke("delete_file_async", {
-        port: serialPort?.port,
-        command: "<4 CONFIG.CFG>",
-      })
-      console.log("config.cfg gelöscht:", deleteResult)
-
+      // Schreibe neue config.cfg - Arduino löscht danach automatisch alle anderen .cfg Dateien
       console.log("Schreibe neue Konfiguration...")
       await invoke("write_file", {
         port: serialPort?.port,
-        command: `<5 ${commandString}>`,
+        command: `<7 ${commandString}>`,
       })
       console.log("Neue Konfiguration geschrieben")
       toast.success("Konfiguration erfolgreich aktualisiert!")
@@ -112,7 +104,8 @@ export default function ConfigForm(
       setModal(false)
       
     } catch (err: any) {
-      toast.error(`Fehler: ${err.message}`)
+      const errorMsg = typeof err === "string" ? err : err?.message || String(err)
+      toast.error(`Fehler: ${errorMsg}`)
     }
     setLoading(false)
   }

@@ -13,7 +13,7 @@ use std::process::Command;
 use std::{env, path};
 use tauri::command;
 use serial2_tokio::SerialPort;
-use tokio::time::{timeout, Duration as TokioDuration};
+use tokio::time::{timeout, sleep, Duration as TokioDuration};
 use std::time::Instant;
 
 #[derive(Serialize, Deserialize)]
@@ -100,7 +100,7 @@ pub fn list_serialport_devices() -> Vec<SerialPorts> {
 #[command]
 pub async fn send_command_and_read_response(port_name: &str, command: &str) -> Result<String, String> {
     // Öffne den seriellen Port asynchron
-    let mut port = SerialPort::open(port_name, 9600).map_err(|e| {
+    let mut port = SerialPort::open(port_name, 115200).map_err(|e| {
         eprintln!("Error opening serial port: {}", e);
         e.to_string()
     })?;
@@ -138,10 +138,19 @@ async fn send_command_and_read_response2(
     port_name: &str,
     command: &str,
 ) -> Result<String, String> {
-    let mut port = SerialPort::open(port_name, 9600)
+    let mut port = SerialPort::open(port_name, 115200)
         .map_err(|e| e.to_string())?;
-    port.write_all(command.as_bytes()).await
-        .map_err(|e| e.to_string())?;
+    
+    // Send data in small chunks with delays to avoid buffer overflow
+    let bytes = command.as_bytes();
+    let chunk_size = 32;
+    
+    for chunk in bytes.chunks(chunk_size) {
+        port.write_all(chunk).await
+            .map_err(|e| e.to_string())?;
+        // Small delay between chunks to let Arduino process
+        sleep(Duration::from_millis(20)).await;
+    }
 
     let mut buffer = [0; 256];
     let mut collected = String::new();

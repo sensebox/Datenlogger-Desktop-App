@@ -61,7 +61,7 @@ unsigned long lastUpload = 0;
 unsigned long currentTime = 0;
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(1000);
     // enable I2C
     pinMode(14, OUTPUT);

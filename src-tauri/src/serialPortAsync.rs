@@ -61,7 +61,7 @@ pub async fn write_and_read_serialport(port: String, baud_rate: u32, command: St
 #[tauri::command]
 pub async fn read_serialport(port: String) -> Result<String, ()> {
     // Open the serial port with the provided port name and baud rate
-    let mut port = SerialPort::open(&port, 9600).map_err(|e| {
+    let mut port = SerialPort::open(&port, 115200).map_err(|e| {
         eprintln!("Error opening serial port: {}", e);
         ()
     })?;

@@ -31,7 +31,7 @@ export function EditConfigDialog({})  {
         <DialogTitle className="hidden">
             
         </DialogTitle>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
             <EditconfigForm setModal={setOpen} />
         </DialogContent>
         </Dialog>
